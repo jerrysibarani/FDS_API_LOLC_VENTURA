@@ -1,0 +1,152 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace API.Data.Entities
+{
+    [Table("DOCUMENTS", Schema = "public")]
+    public class DOCUMENTS
+    {
+        [Key]
+        public int ID { get; set; }
+        public string? CLIENT_CODE { get; set; }
+        public string? CUSTOMER_CODE { get; set; }
+        public string? TYPE_FIDUSIA { get; set; }
+        public string? BRANCH_CODE { get; set; }
+        public string? NOTARIS_CODE { get; set; }
+        public string? NO_REGISTRASI { get; set; }
+        public string? NO_VOUCHER { get; set; }
+        public string? NO_PEMBIAYAAN { get; set; }
+        public string? NO_SERTIFIKAT { get; set; }
+        public DateTime? TGL_SERTIFIKAT { get; set; }
+        public TimeOnly? JAM_MINUTA { get; set; }
+        public DateTime? TANGGAL_AKTA { get; set; }
+        public string? NOMOR_AKTA { get; set; }
+        public string? TIPE_PEMBERIFIDUSIA { get; set; }
+        public string? ID_PEMBERIFIDUSIA { get; set; }
+        public string? NPWP_PEMBERIFIDUSIA { get; set; }
+        public string? NAMA_PEMBERIFIDUSIA { get; set; }
+        public string? JK_PEMBERIFIDUSIA { get; set; }
+        public string? MARITAL_PEMBERIFIDUSIA { get; set; }
+        public string? TPTLAHIR_PEMBERIFIDUSIA { get; set; }
+        public DateTime? TGLLAHIR_PEMBERIFIDUSIA { get; set; }
+        public string? PEKERJAAN_PEMBERIFIDUSIA { get; set; }
+        public string? ALAMAT_PEMBERIFIDUSIA { get; set; }
+        public string? RT_PEMBERIFIDUSIA { get; set; }
+        public string? RW_PEMBERIFIDUSIA { get; set; }
+        public string? KELURAHAN_PEMBERIFIDUSIA { get; set; }
+        public string? KECAMATAN_PEMBERIFIDUSIA { get; set; }
+        public string? KABUPATEN_PEMBERIFIDUSIA { get; set; }
+        public string? PROVINSI_PEMBERIFIDUSIA { get; set; }
+        public string? POS_PEMBERIFIDUSIA { get; set; }
+        public string? HP_PEMBERIFIDUSIA { get; set; }
+        public string? ID_PASANGAN { get; set; }
+        public string? NAMA_PASANGAN { get; set; }
+        public string? JK_PASANGAN { get; set; }
+        public string? MARITAL_PASANGAN { get; set; }
+        public string? TPTLAHIR_PASANGAN { get; set; }
+        public DateTime? TGLLAHIR_PASANGAN { get; set; }
+        public string? ALAMAT_PASANGAN { get; set; }
+        public string? RT_PASANGAN { get; set; }
+        public string? RW_PASANGAN { get; set; }
+        public string? KELURAHAN_PASANGAN { get; set; }
+        public string? KECAMATAN_PASANGAN { get; set; }
+        public string? KABUPATEN_PASANGAN { get; set; }
+        public string? PROVINSI_PASANGAN { get; set; }
+        public string? POS_PASANGAN { get; set; }
+        public string? HP_PASANGAN { get; set; }
+        public string? ID_DEBITUR { get; set; }
+        public string? NAMA_DEBITUR { get; set; }
+        public string? JK_DEBITUR { get; set; }
+        public string? MARITAL_DEBITUR { get; set; }
+        public string? TPTLAHIR_DEBITUR { get; set; }
+        public DateTime? TGLLAHIR_DEBITUR { get; set; }
+        public string? ALAMAT_DEBITUR { get; set; }
+        public string? RT_DEBITUR { get; set; }
+        public string? RW_DEBITUR { get; set; }
+        public string? KELURAHAN_DEBITUR { get; set; }
+        public string? KECAMATAN_DEBITUR { get; set; }
+        public string? KABUPATEN_DEBITUR { get; set; }
+        public string? PROVINSI_DEBITUR { get; set; }
+        public string? POS_DEBITUR { get; set; }
+        public string? HP_DEBITUR { get; set; }
+        public DateTime? TANGGAL_ORDER { get; set; }
+        public DateTime? TANGGAL_KONTRAK { get; set; }
+        public string? NOMOR_KONTRAK { get; set; }
+        public double? HUTANG_POKOK { get; set; }
+        public double? NILAI_JAMINAN { get; set; }
+        public double? NILAI_BARANG { get; set; }
+        public string? CATEGORY_OBJECT { get; set; }
+        public string? JENIS_OBJECT { get; set; }
+        public string? MODEL { get; set; }
+        public string? MERK { get; set; }
+        public string? TIPE { get; set; }
+        public int? TAHUN { get; set; }
+        public string? WARNA { get; set; }
+        public string? NOMOR_RANGKA { get; set; }
+        public string? NOMOR_MESIN { get; set; }
+        public string? NOMOR_POLISI { get; set; }
+        public string? NOMOR_BPKB { get; set; }
+        public string? NAMA_BPKB { get; set; }
+        public string? PEMILIK_BPKB { get; set; }
+        public string? TENOR { get; set; }
+        public DateTime? TANGGAL_AWAL_TENOR { get; set; }
+        public DateTime? TANGGAL_AKHIR_TENOR { get; set; }
+        public string? TYPE_PRODUK { get; set; }
+        public string? WAY_OF_FINANCING { get; set; }
+        public string? NAMA_KWITANSI { get; set; }
+        public double? PRICE_PNBP { get; set; }
+        public double? PRICE_FEE { get; set; }
+        public int? CLIENT_FEE_ID { get; set; }
+        public string? Description_1 { get; set; }
+        public string? Description_2 { get; set; }
+        public string? Description_3 { get; set; }
+        public string? Description_4 { get; set; }
+        public string? Description_5 { get; set; }
+        public string? Description_6 { get; set; }
+        public string? Description_7 { get; set; }
+        public string? Description_8 { get; set; }
+        public string? Description_9 { get; set; }
+        public string? Description_10 { get; set; }
+        public string? Description_11 { get; set; }
+        public string? Description_12 { get; set; }
+        public string? Description_13 { get; set; }
+        public string? Description_14 { get; set; }
+        public string? Description_15 { get; set; }
+        public string? Description_16 { get; set; }
+        public string? Description_17 { get; set; }
+        public string? Description_18 { get; set; }
+        public string? Description_19 { get; set; }
+        public string? Description_20 { get; set; }
+        public DateTime? Tanggal_Description_1 { get; set; }
+        public DateTime? Tanggal_Description_2 { get; set; }
+        public DateTime? Tanggal_Description_3 { get; set; }
+        public DateTime? Tanggal_Description_4 { get; set; }
+        public DateTime? Tanggal_Description_5 { get; set; }
+        public int? Number_Description_1 { get; set; }
+        public int? Number_Description_2 { get; set; }
+        public int? Number_Description_3 { get; set; }
+        public int? Number_Description_4 { get; set; }
+        public int? Number_Description_5 { get; set; }
+        public string? USER_BY { get; set; }
+        public DateTime? INSERT_DATE { get; set; }
+        public string? AHU_BY { get; set; }
+        public DateTime? AHU_DATE { get; set; }
+        public bool AHU_STATUS { get; set; }
+
+        public string? CERTIFICATE_BY { get; set; }
+        public DateTime? CERTIFICATE_DATE { get; set; }
+        public bool CERTIFICATE_STATUS { get; set; }
+
+        public string? CREATED_BY { get; set; }
+        public DateTime? CREATED_DATE { get; set; }
+        public string? MODIFIED_BY { get; set; }
+        public DateTime? MODIFIED_DATE { get; set; }
+        public bool DELETED_STATUS { get; set; }
+        public DateTime? DELETED_DATE { get; set; }
+        public string? DELETED_BY { get; set; } 
+
+        public string? MESSAGES { get; set; }
+        public bool IS_DUPLICATE { get; set; }
+        public DateTime? DUPLICATED_DATE { get; set; }
+    }
+}
