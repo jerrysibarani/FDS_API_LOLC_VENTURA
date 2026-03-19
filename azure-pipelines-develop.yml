@@ -1,0 +1,30 @@
+trigger:
+- develop
+
+pool:
+  name: Default
+
+variables:
+  buildConfiguration: 'Release'
+  imageName: 'fds-api-lolc-dev'
+
+steps:
+# Build Docker image
+- script: |
+    docker build \
+      -t $(imageName):latest \
+      -f API/Dockerfile \
+      API
+  displayName: 'Build Docker image'
+
+# Save Docker image as .tar
+- script: |
+    docker save $(imageName):latest -o $(Build.ArtifactStagingDirectory)/$(imageName).tar
+  displayName: 'Export Docker image as tar'
+
+# Publish tar as artifact
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(imageName).tar'
+    ArtifactName: 'dockerimage'
+    publishLocation: 'Container'
