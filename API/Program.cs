@@ -35,6 +35,8 @@ builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 builder.Services.AddTransient<IConnectionDB, ConnectionDB>();
 builder.Services.Configure<MySettings>(builder.Configuration.GetSection("MySettings"));
 
+builder.Services.AddHealthChecks();
+
 // Check if connection string encryption is enabled.
 bool connectionStringEncryption = false;
 var settings = builder.Configuration.GetSection("MySettings").Get<MySettings>();
@@ -163,6 +165,8 @@ builder.Services.AddAutoMapper(typeof(Program).Assembly);
 var corsAllow = builder.Configuration.GetSection("AppSettings:CorsAllowAll").Value ?? "false";
 
 var app = builder.Build();
+
+app.MapHealthChecks("/health");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
