@@ -34,6 +34,9 @@ builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 // Register the decryption service.
 builder.Services.AddScoped<IConnectionDB, ConnectionDB>();
 
+
+builder.Services.AddHealthChecks();
+
 // Check if connection string encryption is enabled.
 var settings = builder.Configuration.GetSection("MySettings").Get<MySettings>();
 string rawConnectionString = builder.Configuration.GetConnectionString("DBConfig")!;
