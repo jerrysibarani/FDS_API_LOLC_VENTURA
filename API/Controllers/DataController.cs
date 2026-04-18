@@ -1,15 +1,10 @@
-﻿using API.Data;
-using API.Helpers;
+﻿using API.IServices;
 using API.Model;
 using API.Models.Params;
+using API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Microsoft.EntityFrameworkCore;
-using API.Data.Entities;
-using API.Models.Views;
-using System.Globalization;
-using API.IServices;
 
 namespace API.Controllers
 {
@@ -25,15 +20,12 @@ namespace API.Controllers
 
 
         [HttpPost("ForAhu")]
-        public async Task<ActionResult> ForAhu(ParamData param)
+        public async Task<ActionResult> ForAhu(ParamData param, CancellationToken cancellationToken)
         {
-            if (currentUser.UserType == ConstantaData.EXTERNAL)
-            {
-                return BadRequest("Not Access");
-            }
             try
             {
-                var result = await _dataService.GetForAHU(currentUser, param);
+                var result = await _dataService.GetForAHU_Keyset(CurrentUser, param, cancellationToken);
+                if (result == null) return NotFound("Data not found");
                 return Ok(JsonConvert.SerializeObject(result, Formatting.Indented));
             }
             catch (Exception ex)
@@ -45,15 +37,12 @@ namespace API.Controllers
 
 
         [HttpPost("ForCertificate")]
-        public async Task<ActionResult> ForCertificate(ParamData param)
+        public async Task<ActionResult> ForCertificate(ParamData param, CancellationToken cancellationToken)
         {
-            if (currentUser.UserType == ConstantaData.EXTERNAL)
-            {
-                return BadRequest("Not Access");
-            }
             try
             {
-                var result = await _dataService.GetForCertificate(currentUser, param);
+                var result = await _dataService.GetForCertificate_Keyset(CurrentUser, param, cancellationToken);
+                if (result == null) return NotFound("Data not found");
                 return Ok(JsonConvert.SerializeObject(result, Formatting.Indented));
             }
             catch (Exception ex)
@@ -65,15 +54,28 @@ namespace API.Controllers
 
 
         [HttpPost("ForMinuta")]
-        public async Task<ActionResult> ForMinuta(ParamData param)
+        public async Task<ActionResult> ForMinuta(ParamData param, CancellationToken cancellationToken)
         {
-            if (currentUser.UserType == ConstantaData.EXTERNAL)
-            {
-                return BadRequest("Not Access");
-            }
             try
             {
-                var result = await _dataService.GetForMinuta(currentUser, param);
+                var result = await _dataService.GetForMinuta_Keyset(CurrentUser, param, cancellationToken);
+                if (result == null) return NotFound("Data not found");
+                return Ok(JsonConvert.SerializeObject(result, Formatting.Indented));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        [HttpPost("ForHistoriesCertificate")]
+        public async Task<ActionResult> ForHistoriesCertificate(ParamData param, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await _dataService.GetForHistoryCertificates_Keyset(CurrentUser, param, cancellationToken);
+                if (result == null) return NotFound("Data not found");
                 return Ok(JsonConvert.SerializeObject(result, Formatting.Indented));
             }
             catch (Exception ex)

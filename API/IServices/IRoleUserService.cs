@@ -5,10 +5,10 @@ namespace API.IServices
 {
     public interface IRoleUserService
     {
-        public Task<List<RolesUserModel>> GetAllRolesUserAsync(string userId);
-        public Task<IdentityResult> AssignRoleToUserAsync(string userId, string roleName);
-        public Task<bool> DeleteUserRolesAsync(string userId, string roleName);
-        public Task<bool> IsUserInRoleAsync(string userId, string roleName);
+        public Task<List<RolesUserModel>> GetAllRolesUserAsync(string UserId, CancellationToken cancellationToken);
+        public Task<IdentityResult> AssignRoleToUserAsync(string UserId, string RoleName);
+        public Task<bool> DeleteUserRolesAsync(string UserId, string RoleName);
+        public Task<bool> IsUserInRoleAsync(string UserId, string RoleName);
 
 
     }

@@ -13,82 +13,83 @@ namespace API.Services
 
         private readonly AppDbContext _dbContext = dbContext;
 
-        public async Task<List<POSTS>> GetListPost()
+        public async Task<IReadOnlyList<POSTS>> GetListPost(CancellationToken cancellationToken = default)
         {
             return await _dbContext.Posts
                 .Where(x => x.ISACTIVE.Equals(true))
                 .AsNoTracking()
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<POSTS?> GetListPostById(int postId)
+        public async Task<POSTS?> GetListPostById(int PostId, CancellationToken cancellationToken = default)
         {
             return await _dbContext.Posts
+                .Where(p => p.POST_ID == PostId && p.ISACTIVE)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.POST_ID == postId && p.ISACTIVE);
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<List<POSTS>> GetListPostByType(string postType)
+        public async Task<IReadOnlyList<POSTS>> GetListPostByType(string PostType, CancellationToken cancellationToken = default)
         {
             return await _dbContext.Posts
-                .Where(p => p.POST_TYPE == postType && p.ISACTIVE)
+                .Where(p => p.POST_TYPE == PostType && p.ISACTIVE)
                 .AsNoTracking()
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<POSTS>> GetListPostByHeader(string postHeader)
+        public async Task<IReadOnlyList<POSTS>> GetListPostByHeader(string PostHeader, CancellationToken cancellationToken = default)
         {
             return await _dbContext.Posts
-                .Where(p => p.POST_HEADER == postHeader && p.ISACTIVE)
+                .Where(p => p.POST_HEADER == PostHeader && p.ISACTIVE)
                 .AsNoTracking()
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<POSTS>> GetListPostByGroup(string postGroup)
+        public async Task<IReadOnlyList<POSTS>> GetListPostByGroup(string PostGroup, CancellationToken cancellationToken = default)
         {
             return await _dbContext.Posts
-                .Where(p => p.POST_GROUP == postGroup && p.ISACTIVE)
+                .Where(p => p.POST_GROUP == PostGroup && p.ISACTIVE)
                 .AsNoTracking()
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<PostValueModels>> GetListPostTypeHeaderNull(string postType)
+        public async Task<IReadOnlyList<PostValueModels>> GetListPostTypeHeaderNull(string PostType, CancellationToken cancellationToken = default)
         {
             return await _dbContext.Posts
-                .Where(p => p.ISACTIVE && p.POST_TYPE == postType && string.IsNullOrEmpty(p.POST_HEADER))
+                .Where(p => p.ISACTIVE && p.POST_TYPE == PostType && string.IsNullOrEmpty(p.POST_HEADER))
                 .Select(p => new PostValueModels
                 {
                     POST_NAME = p.POST_NAME,
                     POST_VALUE = p.POST_VALUE
                 })
                 .AsNoTracking()
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<PostValueModels>> GetListPostTypeHeader(string postType, string postHeader)
+        public async Task<IReadOnlyList<PostValueModels>> GetListPostTypeHeader(string PostType, string PostHeader, CancellationToken cancellationToken = default)
         {
             return await _dbContext.Posts
-                .Where(p => p.ISACTIVE && p.POST_TYPE == postType && p.POST_HEADER == postHeader)
+                .Where(p => p.ISACTIVE && p.POST_TYPE == PostType && p.POST_HEADER == PostHeader)
                 .Select(p => new PostValueModels
                 {
                     POST_NAME = p.POST_NAME,
                     POST_VALUE = p.POST_VALUE
                 })
                 .AsNoTracking()
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<string>> GetListPostType()
+        public async Task<IReadOnlyList<string>> GetListPostType(CancellationToken cancellationToken = default)
         {
             return await _dbContext.Posts
                 .Where(p => p.ISACTIVE && p.POST_TYPE != null)
                 .Select(p => p.POST_TYPE!)
                 .Distinct()
                 .AsNoTracking()
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<PostTypeModels>> GetListPostGroupType()
+        public async Task<IReadOnlyList<PostTypeModels>> GetListPostGroupType(CancellationToken cancellationToken = default)
         {
             return await _dbContext.Posts
                 .Where(p => p.ISACTIVE)
@@ -99,7 +100,7 @@ namespace API.Services
                     PostHelps = g.ToList()
                 })
                 .AsNoTracking()
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
     }

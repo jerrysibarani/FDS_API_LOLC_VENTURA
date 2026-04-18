@@ -8,21 +8,21 @@ namespace API.Services
     {
         private readonly RoleManager<IdentityRole> _roleManager = roleManager;
 
-        public async Task<IdentityResult> CreateRoleAsync(string roleName)
+        public async Task<IdentityResult> CreateRoleAsync(string RoleName)
         {
-            if (await RoleExistsAsync(roleName))
+            if (await RoleExistsAsync(RoleName))
                 throw new InvalidOperationException("Role already exists.");
 
-            var role = new IdentityRole(roleName);
+            var role = new IdentityRole(RoleName);
             return await _roleManager.CreateAsync(role);
 
 
         }
 
 
-        public async Task<bool> DeleteRoleAsync(string roleId)
+        public async Task<bool> DeleteRoleAsync(string RoleId)
         {
-            var role = await _roleManager.FindByIdAsync(roleId);
+            var role = await _roleManager.FindByIdAsync(RoleId);
             if (role != null)
             {
                 await _roleManager.DeleteAsync(role);
@@ -41,9 +41,9 @@ namespace API.Services
         {
             return await _roleManager.Roles.ToListAsync();
         }
-        public async Task<bool> RoleExistsAsync(string roleName)
+        public async Task<bool> RoleExistsAsync(string RoleName)
         {
-            return await _roleManager.RoleExistsAsync(roleName);
+            return await _roleManager.RoleExistsAsync(RoleName);
         }
 
 

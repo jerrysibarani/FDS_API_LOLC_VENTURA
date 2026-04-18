@@ -5,8 +5,8 @@ namespace API.IServices
 {
     public interface INotarisService
     {
-        Task<List<PostValueModels>> GetCodeNotaris(Principal currentUser);
+        public Task<IReadOnlyList<PostValueModels>> GetCodeNotaris(Principal UserCurrent, CancellationToken cancellationToken = default);
 
-        Task<bool> ChangeStatusNotaris(Principal currentUser, string id);
+        public Task<bool> ChangeStatusNotaris(Principal UserCurrent, string Id, CancellationToken cancellationToken = default);
     }
 }

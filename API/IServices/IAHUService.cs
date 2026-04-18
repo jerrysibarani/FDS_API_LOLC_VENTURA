@@ -6,8 +6,8 @@ namespace API.IServices
 {
     public interface IAHUService
     {
-        Task<List<AhuAccountModels>> GetAhuAccounts(Principal currentUser);
+        public Task<IReadOnlyList<AhuAccountModels>> GetAhuAccounts(Principal UserCurrent, CancellationToken cancellationToken = default);
 
-        Task<bool> ChangePasswordAHU(Principal currentUser, ParamPasswordAhu param);
+        public Task<bool> ChangePasswordAHU(Principal UserCurrent, ParamPasswordAhu Param, CancellationToken cancellationToken = default);
     }
 }

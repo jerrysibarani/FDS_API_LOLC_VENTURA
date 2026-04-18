@@ -2,6 +2,6 @@
 {
     public interface IConnectionDB
     {
-        public string DecryptionDB(string encryptedConnectionString);
+        public string DecryptionDB(string EncryptedConnectionString);
     }
 }

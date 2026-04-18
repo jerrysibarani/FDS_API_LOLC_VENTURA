@@ -7,6 +7,7 @@ using System.Data;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 
 namespace API.Services
 {
@@ -35,9 +36,18 @@ namespace API.Services
 
 
         //SELECT TABLE OR VIEW
-        public async Task<IEnumerable<T>> SelectRawAsync<T>(string sqlQuery, params object[]? parameters) where T : class
+        public async Task<IReadOnlyList<T>> SelectRawAsync<T>(string sqlQuery, object[]? parameters = null, CancellationToken cancellationToken = default) where T : class
         {
-                return await _dbContext.Set<T>().FromSqlRaw(sqlQuery, parameters ?? Array.Empty<object>()).AsNoTracking().ToListAsync();
+            return await _dbContext.Database
+                .SqlQueryRaw<T>(sqlQuery, parameters ?? Array.Empty<object>())
+                .ToListAsync(cancellationToken);
+        }
+        public async Task<IReadOnlyList<T>> SelectRawSetAsync<T>(string sqlQuery, object[]? parameters = null, CancellationToken cancellationToken = default) where T : class
+        {
+            return await _dbContext.Set<T>()
+                .FromSqlRaw(sqlQuery, parameters ?? Array.Empty<object>())
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
         }
         //USED
         //public async Task<IEnumerable<User>> GetUsersByConditionAsync(string condition)
@@ -46,7 +56,7 @@ namespace API.Services
         //    return await _repository.SelectViewAsync<User>(sqlQuery, $"%{condition}%");
         //}
 
-        public async Task<IEnumerable<T>> SelectRawDynamicAsync<T>(string baseQuery, Dictionary<string, object>? conditions) where T : class
+        public async Task<IEnumerable<T>> SelectRawDynamicAsync<T>(string baseQuery, Dictionary<string, object>? conditions, CancellationToken cancellationToken = default) where T : class
         {
             var queryBuilder = new StringBuilder(baseQuery);
             var parameters = new List<object>();
@@ -67,7 +77,7 @@ namespace API.Services
                 queryBuilder.Append(string.Join(" AND ", conditionList));
             }
 
-                return await _dbContext.Set<T>().FromSqlRaw(queryBuilder.ToString(), [.. parameters]).AsNoTracking().ToListAsync();
+                return await _dbContext.Set<T>().FromSqlRaw(queryBuilder.ToString(), [.. parameters]).AsNoTracking().ToListAsync(cancellationToken);
                 //return await _context.Set<T>().FromSqlRaw(queryBuilder.ToString(), parameters.ToArray()).ToListAsync();
         }
 
@@ -87,7 +97,7 @@ namespace API.Services
 
         //var users = await userService.GetUsersByConditionsAsync(conditions);
 
-        public async Task<IEnumerable<T>> SelectCommandAsync<T>(string baseQuery, Dictionary<string, object>? conditions) where T : class, new()
+        public async Task<IEnumerable<T>> SelectCommandAsync<T>(string baseQuery, Dictionary<string, object>? conditions, CancellationToken cancellationToken = default) where T : class, new()
         {
             using (var command = _dbContext.Database.GetDbConnection().CreateCommand())
             {
@@ -114,8 +124,8 @@ namespace API.Services
                 command.CommandText = queryBuilder.ToString();
                 command.Parameters.AddRange(parameters.ToArray());
 
-                await _dbContext.Database.OpenConnectionAsync();
-                using var result = await command.ExecuteReaderAsync();
+                await _dbContext.Database.OpenConnectionAsync(cancellationToken);
+                using var result = await command.ExecuteReaderAsync(cancellationToken);
 
                 var entities = new List<T>();
                 while (await result.ReadAsync())
@@ -207,11 +217,21 @@ namespace API.Services
 
         //STORE PROCEDURE
 
-        public async Task<IEnumerable<T>> ExecSPRawAsync<T>(string storedProcedure, params object[]? parameters) where T : class
+        public async Task<IReadOnlyList<T>> ExecSPRawAsync<T>(string sql, object[]? parameters = null, CancellationToken cancellationToken = default) where T : class
         {
-                return await _dbContext.Set<T>().FromSqlRaw(storedProcedure, parameters ?? Array.Empty<object>()).AsNoTracking().ToListAsync();
+            return await _dbContext.Database
+                .SqlQueryRaw<T>(sql, parameters ?? Array.Empty<object>())
+                .ToListAsync(cancellationToken);
         }
 
+
+        public async Task<IReadOnlyList<T>> ExecSPRawSetAsync<T>(string storedProcedure, object[]? parameters = null, CancellationToken cancellationToken = default) where T : class
+        {
+            return await _dbContext.Set<T>()
+                .FromSqlRaw(storedProcedure, parameters ?? Array.Empty<object>())
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+        }
 
         //USED
         //public async Task<IEnumerable<User>> GetUsersByStoredProcedureAsync(string searchTerm)
@@ -232,7 +252,7 @@ namespace API.Services
         //}
 
 
-        public async Task<IEnumerable<T>> ExecSPRawDynamicAsync<T>(string storedProcedure, Dictionary<string, object>? parameters) where T : class
+        public async Task<IEnumerable<T>> ExecSPRawDynamicAsync<T>(string storedProcedure, Dictionary<string, object>? parameters, CancellationToken cancellationToken = default) where T : class
         {
             NpgsqlParameter[] npgsqlParameters = Array.Empty<NpgsqlParameter>();
 
@@ -244,9 +264,10 @@ namespace API.Services
             }
 
             return await _dbContext.Set<T>()
-                .FromSqlRaw($"SELECT * FROM {storedProcedure}({string.Join(", ", npgsqlParameters.Select(p => "@" + p.ParameterName))})", npgsqlParameters)
+                .FromSqlRaw($"SELECT * FROM {storedProcedure}({string.Join(", ", npgsqlParameters.Select(p => "@" + p.ParameterName))})",
+                            npgsqlParameters)
                 .AsNoTracking()
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
 
@@ -306,7 +327,7 @@ namespace API.Services
         //}
 
 
-        public async Task<IEnumerable<T>> ExecSPCommandAsync<T>(string storedProcedure, Dictionary<string, object>? parameters) where T : class, new()
+        public async Task<IEnumerable<T>> ExecSPCommandAsync<T>(string storedProcedure, Dictionary<string, object>? parameters, CancellationToken cancellationToken = default) where T : class, new()
         {
             using (var command = _dbContext.Database.GetDbConnection().CreateCommand())
             {
@@ -324,9 +345,9 @@ namespace API.Services
 
                 var entities = new List<T>();
 
-                await _dbContext.Database.OpenConnectionAsync();
+                await _dbContext.Database.OpenConnectionAsync(cancellationToken);
 
-                using (var result = await command.ExecuteReaderAsync())
+                using (var result = await command.ExecuteReaderAsync(cancellationToken))
                 {
                     while (await result.ReadAsync())
                     {
@@ -364,7 +385,7 @@ namespace API.Services
         //var users = await userService.GetUsersByStoredProcedureAsync(parameters);
 
 
-        public async Task<DataTable> ExecSPToDataTable(string storedProcedure, Dictionary<string, object>? parameters)
+        public async Task<DataTable> ExecSPToDataTable(string storedProcedure, Dictionary<string, object>? parameters, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -384,9 +405,9 @@ namespace API.Services
                         }
                     }
 
-                    await _dbContext.Database.OpenConnectionAsync();
+                    await _dbContext.Database.OpenConnectionAsync(cancellationToken);
 
-                    using (var reader = await command.ExecuteReaderAsync())
+                    using (var reader = await command.ExecuteReaderAsync(cancellationToken))
                     {
                         dataTable.Load(reader);
                     }
@@ -401,7 +422,7 @@ namespace API.Services
             }
         }
 
-        public async Task<DataTable> ExecSPToDataTable(string query, NpgsqlParameter[] parameters)
+        public async Task<DataTable> ExecSPToDataTable(string query, NpgsqlParameter[] parameters, CancellationToken cancellationToken = default)
         {
             var dataTable = new DataTable();
 
@@ -415,9 +436,9 @@ namespace API.Services
                     command.Parameters.Add(param);
                 }
 
-                await _dbContext.Database.OpenConnectionAsync();
+                await _dbContext.Database.OpenConnectionAsync(cancellationToken);
 
-                using (var reader = await command.ExecuteReaderAsync())
+                using (var reader = await command.ExecuteReaderAsync(cancellationToken))
                 {
                     dataTable.Load(reader);
                 }
@@ -511,7 +532,7 @@ namespace API.Services
         //}
 
 
-        public async Task<DataSet> ExecSPToDataSet(string storedProcedure, Dictionary<string, object>? parameters)
+        public async Task<DataSet> ExecSPToDataSet(string storedProcedure, Dictionary<string, object>? parameters, CancellationToken cancellationToken = default)
         {
             var dataSet = new DataSet();
 
@@ -529,16 +550,16 @@ namespace API.Services
                     }
                 }
 
-                await _dbContext.Database.OpenConnectionAsync();
+                await _dbContext.Database.OpenConnectionAsync(cancellationToken);
 
-                using (var result = await command.ExecuteReaderAsync())
+                using (var result = await command.ExecuteReaderAsync(cancellationToken))
                 {
                     do
                     {
                         var dataTable = new DataTable();
                         dataTable.Load(result);
                         dataSet.Tables.Add(dataTable);
-                    } while (!result.IsClosed && await result.NextResultAsync());
+                    } while (!result.IsClosed && await result.NextResultAsync(cancellationToken));
                 }
 
                 await _dbContext.Database.CloseConnectionAsync();
@@ -596,7 +617,7 @@ namespace API.Services
         //}
 
 
-        public async Task<List<DataTable>> ExecSPToDataTables(string storedProcedureName, Dictionary<string, object>? parameters)
+        public async Task<List<DataTable>> ExecSPToDataTables(string storedProcedureName, Dictionary<string, object>? parameters, CancellationToken cancellationToken = default)
         {
             var dataTables = new List<DataTable>();
 
@@ -614,16 +635,16 @@ namespace API.Services
                     }
                 }
 
-                await _dbContext.Database.OpenConnectionAsync();
+                await _dbContext.Database.OpenConnectionAsync(cancellationToken);
 
-                using (var result = await command.ExecuteReaderAsync())
+                using (var result = await command.ExecuteReaderAsync(cancellationToken))
                 {
                     do
                     {
                         var dataTable = new DataTable();
                         dataTable.Load(result);
                         dataTables.Add(dataTable);
-                    } while (await result.NextResultAsync());
+                    } while (await result.NextResultAsync(cancellationToken));
                 }
 
                 await _dbContext.Database.CloseConnectionAsync();
@@ -680,7 +701,7 @@ namespace API.Services
         //}
 
 
-        public async Task<DataSet> ExecSPToDataSets(string storedProcedureName, Dictionary<string, object>? parameters)
+        public async Task<DataSet> ExecSPToDataSets(string storedProcedureName, Dictionary<string, object>? parameters, CancellationToken cancellationToken = default)
         {
             var dataSet = new DataSet();
 
@@ -698,16 +719,16 @@ namespace API.Services
                     }
                 }
 
-                await _dbContext.Database.OpenConnectionAsync();
+                await _dbContext.Database.OpenConnectionAsync(cancellationToken);
 
-                using (var result = await command.ExecuteReaderAsync())
+                using (var result = await command.ExecuteReaderAsync(cancellationToken))
                 {
                     do
                     {
                         var dataTable = new DataTable();
                         dataTable.Load(result);
                         dataSet.Tables.Add(dataTable);
-                    } while (await result.NextResultAsync());
+                    } while (await result.NextResultAsync(cancellationToken));
                 }
 
                 await _dbContext.Database.CloseConnectionAsync();
@@ -775,17 +796,17 @@ namespace API.Services
         //}
 
 
-        public async Task<bool> PostgresBulkInsertAsync(string tableName, DataTable? data)
+        public async Task<bool> PostgresBulkInsertAsync(string tableName, DataTable? data, CancellationToken cancellationToken = default)
         {
             if (data == null || data.Rows.Count == 0)
                 return false;
 
             try
             {
-                await _dbContext.Database.OpenConnectionAsync();
+                await _dbContext.Database.OpenConnectionAsync(cancellationToken);
 
                 using var writer = _dbContext.Database.GetDbConnection() as NpgsqlConnection;
-                using var importer = writer.BeginBinaryImport($"COPY {tableName} ({string.Join(", ", data.Columns.Cast<DataColumn>().Select(c => c.ColumnName))}) FROM STDIN (FORMAT BINARY)");
+                using var importer = writer!.BeginBinaryImport($"COPY {tableName} ({string.Join(", ", data.Columns.Cast<DataColumn>().Select(c => c.ColumnName))}) FROM STDIN (FORMAT BINARY)");
 
                 foreach (DataRow row in data.Rows)
                 {
@@ -796,7 +817,7 @@ namespace API.Services
                     }
                 }
 
-                await importer.CompleteAsync();
+                await importer.CompleteAsync(cancellationToken);
                 await _dbContext.Database.CloseConnectionAsync();
                 return true;
             }

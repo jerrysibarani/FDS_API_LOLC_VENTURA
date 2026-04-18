@@ -144,9 +144,9 @@ namespace API.Data.Entities
         public bool DELETED_STATUS { get; set; }
         public DateTime? DELETED_DATE { get; set; }
         public string? DELETED_BY { get; set; } 
-
         public string? MESSAGES { get; set; }
         public bool IS_DUPLICATE { get; set; }
         public DateTime? DUPLICATED_DATE { get; set; }
+        public bool IMPORT_STATUS { get; set; }
     }
 }

@@ -17,7 +17,7 @@ namespace API.Services
 
         private readonly AppDbContext _dbContext = dbContext;
 
-        public async Task<List<AhuAccountModels>> GetAhuAccounts(Principal currentUser)
+        public async Task<IReadOnlyList<AhuAccountModels>> GetAhuAccounts(Principal UserCurrent, CancellationToken cancellationToken = default)
         {
             var query = _dbContext.AhuAccounts
                 .Where(a => a.ISACTIVE)
@@ -54,22 +54,21 @@ namespace API.Services
                     KECAMATAN = x.p.KECAMATAN,
                     KELURAHAN = x.p.KELURAHAN,
                     POS = x.p.POS
-                })
-                .AsNoTracking();
+                });
 
-            if (currentUser.UserType == ConstantaData.INTERNAL)
+            if (UserCurrent.UserType == ConstantaData.INTERNAL)
             {
-                query = query.Where(x => x.CLIENT_CODE == currentUser.ClientCode);
+                query = query.Where(x => x.CLIENT_CODE == UserCurrent.ClientCode);
             }
 
-            return await query.ToListAsync();
+            return await query.AsNoTracking().ToListAsync(cancellationToken);
         }
 
 
-        public async Task<bool> ChangePasswordAHU(Principal currentUser, ParamPasswordAhu param)
+        public async Task<bool> ChangePasswordAHU(Principal UserCurrent, ParamPasswordAhu Param, CancellationToken cancellationToken = default)
         {
-            string prmOldPass = EncrDecrRsa.DecryptionRSA(param.Password);
-            var ahuAccounts = await _dbContext.AhuAccounts.Where(x => x.ISACTIVE.Equals(true) && x.AHU_USERID == param.AHU_USERID).ToListAsync();
+            string prmOldPass = EncrDecrRsa.DecryptionRSA(Param.Password);
+            var ahuAccounts = await _dbContext.AhuAccounts.Where(x => x.ISACTIVE.Equals(true) && x.AHU_USERID == Param.AHU_USERID).ToListAsync(cancellationToken);
             if (ahuAccounts.Count() > 0)
             {
                 string? encOldPass = null;
@@ -77,17 +76,17 @@ namespace API.Services
                 {
                     if (string.IsNullOrEmpty(encOldPass))
                     {
-                        encOldPass = EncrDecrRsa.DecryptionRSA(param.Password);
+                        encOldPass = EncrDecrRsa.DecryptionRSA(Param.Password);
                     }
                     if (!string.IsNullOrEmpty(encOldPass) && encOldPass == prmOldPass)
                     {
-                        ahu.AHU_PASSWORD = param.NewPassword;
-                        ahu.MODIFIED_BY = currentUser.Email;
+                        ahu.AHU_PASSWORD = Param.NewPassword;
+                        ahu.MODIFIED_BY = UserCurrent.Email;
                         ahu.MODIFIED_DATE = DateTime.UtcNow;
                     }
                 }
                 _dbContext.AhuAccounts.UpdateRange(ahuAccounts);
-                await _dbContext.SaveChangesAsync();
+                await _dbContext.SaveChangesAsync(cancellationToken);
                 _dbContext.ChangeTracker.Clear();
                 return true;
             }

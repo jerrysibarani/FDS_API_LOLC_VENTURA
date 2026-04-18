@@ -1,14 +1,9 @@
-﻿using API.Data;
-using API.Data.Entities;
-using API.Helpers;
-using API.Model;
+﻿using API.Model;
 using API.IServices;
 using API.Models.Params;
 using API.Models.Views;
-using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 namespace API.Controllers
@@ -18,31 +13,32 @@ namespace API.Controllers
     [ApiController]
     public class DocumentsController(
         IDocumentService documentService,
-        IMapper _mapper,
         ILogger<DocumentsController> _logger
      ) : BaseController
     {
 
-        private readonly IMapper _mapper = _mapper;
         private readonly IDocumentService _documentService = documentService;
         private readonly ILogger<DocumentsController> _logger = _logger;
 
 
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put(int id, DataModels models)
+        public async Task<IActionResult> Put(int id, DataModels models, CancellationToken cancellationToken)
         {
-            if (currentUser.UserType == ConstantaData.EXTERNAL)
-            {
-                return BadRequest("Not Access");
-            }
             try
             {
-                var result = await _documentService.PutDocument(currentUser, id, models);
+                if (models == null || id<= 0)
+                {
+                    return BadRequest("Parameters data is null.");
+                }
+
+                var result = await _documentService.PutDocument(CurrentUser, id, models, cancellationToken);
+
                 if (result)
                 {
                     return Ok(JsonConvert.SerializeObject(new ResponseModel(ResponseCode.OK, "Success", 0, string.Empty), Formatting.Indented));
-                }else
+                }
+                else
                 {
                     return BadRequest("Failed Update Documents");
                 }
@@ -56,15 +52,17 @@ namespace API.Controllers
 
 
         [HttpPost("UpdateDocument")]
-        public async Task<IActionResult> UpdateDocument(DataModels models)
+        public async Task<IActionResult> UpdateDocument(DataModels models, CancellationToken cancellationToken)
         {
-            if (currentUser.UserType == ConstantaData.EXTERNAL)
-            {
-                return BadRequest("Not Access");
-            }
             try
             {
-                var result = await _documentService.UpdateDocument(currentUser, models);
+                if (models == null)
+                {
+                    return BadRequest("Parameters data is null.");
+                }
+
+                var result = await _documentService.UpdateDocument(CurrentUser, models, cancellationToken);
+
                 if (result)
                 {
                     return Ok(JsonConvert.SerializeObject(new ResponseModel(ResponseCode.OK, "Success", 0, string.Empty), Formatting.Indented));
@@ -83,15 +81,17 @@ namespace API.Controllers
 
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            if (currentUser.UserType == ConstantaData.EXTERNAL)
-            {
-                return BadRequest("Not Access");
-            }
             try
             {
-                var result = await _documentService.DeleteDocument(currentUser, id);
+                if (id <= 0)
+                {
+                    return BadRequest("Parameters data is null.");
+                }
+
+                var result = await _documentService.DeleteDocument(CurrentUser, id, cancellationToken);
+
                 if (result)
                 {
                     return Ok(JsonConvert.SerializeObject(new ResponseModel(ResponseCode.OK, "Success", 0, string.Empty), Formatting.Indented));
@@ -109,15 +109,17 @@ namespace API.Controllers
 
 
         [HttpPost("StatusAhu")]
-        public async Task<ActionResult> StatusAhu(ParamStatus param)
+        public async Task<ActionResult> StatusAhu(ParamStatus param, CancellationToken cancellationToken)
         {
-            if (currentUser.UserType == ConstantaData.EXTERNAL)
-            {
-                return BadRequest("Not Access");
-            }
             try
             {
-                var result = await _documentService.StatusAhuDocument(currentUser, param);
+                if (param == null)
+                {
+                    return BadRequest("Parameters data is null.");
+                }
+
+                var result = await _documentService.StatusAhuDocument(CurrentUser, param, cancellationToken);
+
                 if (result)
                 {
                     return Ok(JsonConvert.SerializeObject(new ResponseModel(ResponseCode.OK, "Success", 0, string.Empty), Formatting.Indented));
@@ -136,15 +138,17 @@ namespace API.Controllers
 
         
         [HttpPost("UpdateNotaris")]
-        public async Task<ActionResult> UpdateNotaris(ParamNotaris param)
+        public async Task<ActionResult> UpdateNotaris(ParamNotaris param, CancellationToken cancellationToken)
         {
-            if (currentUser.UserType == ConstantaData.EXTERNAL)
-            {
-                return BadRequest("Not Access");
-            }
             try
             {
-                var result = await _documentService.UpdateNotarisDocument(currentUser, param);
+                if (param == null)
+                {
+                    return BadRequest("Parameters data is null.");
+                }
+
+                var result = await _documentService.UpdateNotarisDocument(CurrentUser, param, cancellationToken);
+
                 if (result)
                 {
                     return Ok(JsonConvert.SerializeObject(new ResponseModel(ResponseCode.OK, "Success", 0, string.Empty), Formatting.Indented));
@@ -161,28 +165,55 @@ namespace API.Controllers
         }
 
 
+        //NEW
 
-        [HttpPost("UpdateCertificate")]
-        public async Task<ActionResult> UpdateCertificate(List<CertificateModel> param)
+        [HttpPost("GenerateCertificates")]
+        public async Task<ActionResult> GenerateCertificates(List<CertificateModel> param, CancellationToken cancellationToken)
         {
-            if (param == null || param.Count < 0)
-            {
-                return BadRequest("Request data is null.");
-            }
-            if (currentUser.UserType == ConstantaData.EXTERNAL)
-            {
-                return BadRequest("Not Access");
-            }
             try
             {
-                var result = await _documentService.UpdateCertificateDocument(currentUser, param);                
-                if (result)
+                if (param == null || param.Count <= 0)
                 {
-                    return Ok(JsonConvert.SerializeObject(new ResponseModel(ResponseCode.OK, "Success", 0, string.Empty), Formatting.Indented));
+                    return BadRequest("Parameters data is null.");
+                }
+
+                var result = await _documentService.GenerateCertificates(CurrentUser, param, cancellationToken);
+
+                if (result == null)
+                {
+                    return BadRequest("Failed Update Certificate");
                 }
                 else
                 {
-                    return BadRequest("Failed Update Documents");
+                    return Ok(JsonConvert.SerializeObject(result, Formatting.Indented));
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        [HttpPost("GenerateVouchers")]
+        public async Task<ActionResult> GenerateVouchers(List<CertificateModel> param, CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (param == null || param.Count <= 0)
+                {
+                    return BadRequest("Parameters data is null.");
+                }
+
+                var result = await _documentService.UpdateCertificates(CurrentUser, param, cancellationToken);
+
+                if (result == null)
+                {
+                    return BadRequest("Failed Update Certificate");
+                }
+                else
+                {
+                    return Ok(JsonConvert.SerializeObject(result, Formatting.Indented));
                 }
             }
             catch (Exception ex)
@@ -193,80 +224,33 @@ namespace API.Controllers
 
 
 
-        [HttpPost("UpdateCertificateByModels")]
-        public async Task<ActionResult> UpdateCertificateByModels(List<CertificateModel> param)
+
+        [HttpPost("UpdateCertificates")]
+        public async Task<ActionResult> UpdateCertificates(List<CertificateModel> param, CancellationToken cancellationToken)
         {
-            if (param == null || param.Count < 0)
-            {
-                return BadRequest("Request data is null.");
-            }
-            if (currentUser.UserType == ConstantaData.EXTERNAL)
-            {
-                return BadRequest("Not Access");
-            }
             try
             {
-                var result = await _documentService.UpdateCertificateDocumentModel(currentUser, param);
-                return Ok(JsonConvert.SerializeObject(result, Formatting.Indented));               
-            }
-            catch (Exception)
-            {
-                return Ok(JsonConvert.SerializeObject(new ResponseModel(ResponseCode.OK, "ERROR", param.Count, param), Formatting.Indented));
-                //return BadRequest(ex.Message);
-            }
-        }
+                if (param == null || param.Count <= 0)
+                {
+                    return BadRequest("Parameters data is null.");
+                }
 
+                var result = await _documentService.UpdateCertificates(CurrentUser, param, cancellationToken);
 
-        [HttpPost("UpdateVoucherByModels")]
-        public async Task<ActionResult> UpdateVoucherByModels(List<CertificateModel> param)
-        {
-            if (param == null || param.Count < 0)
-            {
-                return BadRequest("Request data is null.");
-            }
-            if (currentUser.UserType == ConstantaData.EXTERNAL)
-            {
-                return BadRequest("Not Access");
-            }
-            try
-            {
-                var result = await _documentService.UpdateVoucherDocumentModel(currentUser, param);
-                return Ok(JsonConvert.SerializeObject(result, Formatting.Indented));
-            }
-            catch (Exception)
-            {
-                return Ok(JsonConvert.SerializeObject(new ResponseModel(ResponseCode.OK, "ERROR", param.Count, param), Formatting.Indented));
-                //return BadRequest(ex.Message);
-            }
-        }
-
-
-
-
-        [HttpPost("GetByModels")]
-        public async Task<ActionResult> GetByModels(List<CertificateModel> param)
-        {
-            if (param == null || param.Count < 0)
-            {
-                return BadRequest("Request data is null.");
-            }
-
-            if (currentUser.UserType == ConstantaData.EXTERNAL)
-            {
-                return BadRequest("Not Access");
-            }
-            try
-            {
-                var result = await _documentService.GetDocumentModel(currentUser, param);
-                return Ok(JsonConvert.SerializeObject(result, Formatting.Indented));
+                if (result == null)
+                {
+                    return BadRequest("Failed Update Certificate");
+                }
+                else
+                {
+                    return Ok(JsonConvert.SerializeObject(result, Formatting.Indented));
+                }
             }
             catch (Exception ex)
             {
-                return Ok(JsonConvert.SerializeObject(new ResponseModel(ResponseCode.Error, "ERROR :"+ ex.Message.ToString(), param.Count, param), Formatting.Indented));
-                //return BadRequest(ex.Message);
+                return BadRequest(ex.Message);
             }
         }
-
 
     }
 }

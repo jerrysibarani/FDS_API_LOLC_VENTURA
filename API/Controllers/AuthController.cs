@@ -28,8 +28,6 @@ namespace API.Controllers
         ) : ControllerBase
     {
 
-
-
         private readonly ILogger<AuthController> _logger = _logger;
 
         private readonly IConfiguration confRepo = confRepo;
@@ -40,7 +38,7 @@ namespace API.Controllers
         private readonly IRoleUserService _roleUserService = _roleUserService;
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] ParamLogin prm)
+        public async Task<IActionResult> Login([FromBody] ParamLogin prm, CancellationToken cancellationToken)
         {
             try
             {
@@ -90,8 +88,8 @@ namespace API.Controllers
                     else
                     {
 
-                        var data = await _userAccessService.GetProfileUser();
-                        var roles = await _roleUserService.GetAllRolesUserAsync(user.Id);
+                        var data = await _userAccessService.GetProfileUser(user, cancellationToken);
+                        var roles = await _roleUserService.GetAllRolesUserAsync(user.Id, cancellationToken);
                         var role = roles.Select(x => x.RoleId).ToList();
                         List<Claim>? claims = CreateClaimUser(user, role!, data.IsSuperAdmin);
                         var token = CreateToken(claims!);
@@ -121,7 +119,7 @@ namespace API.Controllers
 
         [Authorize]
         [HttpPost("logout")]
-        public async Task<object?> Logout([FromBody] ParamTokenRefresh request)
+        public async Task<object?> Logout([FromBody] ParamTokenRefresh request, CancellationToken cancellationToken)
         {
             try
             {
@@ -192,7 +190,7 @@ namespace API.Controllers
 
 
 
-        private static List<Claim>? CreateClaimUser(ApplicationUser userApp, List<string> roles, bool? isSuper)
+        private static List<Claim>? CreateClaimUser(ApplicationUser userApp, List<string> roles, bool isSuper)
         {
             List<Claim> claims = new()
             {

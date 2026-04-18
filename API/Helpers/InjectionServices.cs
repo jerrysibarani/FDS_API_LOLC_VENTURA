@@ -23,6 +23,8 @@ namespace API.Helpers
             services.AddScoped<INotarisService, NotarisService>();
             services.AddScoped<ICustomerService, CustomerService>();
             services.AddScoped<IFileService, FileService>();
+            services.AddScoped<IHistoryCertificateService, HistoryCertificateService>();
+            
         }
     }
 }

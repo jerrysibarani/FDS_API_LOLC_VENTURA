@@ -29,11 +29,9 @@ namespace API.Controllers
         {
             try
             {
-                if (ModelState.IsValid)
+                if (ModelState.IsValid && CurrentUser != null && CurrentUser.User != null)
                 {
-
-                    var UserLogin = _httpContextAccessor.HttpContext!.User;
-                    var user = await _userManager.GetUserAsync(UserLogin);
+                    var user = await _userManager.GetUserAsync(CurrentUser.User);
                     if (user != null)
                     {
                         var result = await _userManager.ChangePasswordAsync(user, model.Password, model.NewPassword);

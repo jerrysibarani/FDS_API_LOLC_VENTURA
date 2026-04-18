@@ -1,4 +1,4 @@
-using API.Data;
+﻿using API.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.OpenApi.Models;
@@ -32,20 +32,17 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 // Register the decryption service.
-builder.Services.AddTransient<IConnectionDB, ConnectionDB>();
-builder.Services.Configure<MySettings>(builder.Configuration.GetSection("MySettings"));
-
-builder.Services.AddHealthChecks();
+builder.Services.AddScoped<IConnectionDB, ConnectionDB>();
 
 // Check if connection string encryption is enabled.
-bool connectionStringEncryption = false;
 var settings = builder.Configuration.GetSection("MySettings").Get<MySettings>();
+string rawConnectionString = builder.Configuration.GetConnectionString("DBConfig")!;
+bool connectionStringEncryption = false;
 if (settings != null && settings.IsEncryption)
 {
     connectionStringEncryption = true;
 }
 
-string rawConnectionString = builder.Configuration.GetConnectionString("DBConfig")!;
 string decryptedConnectionString;
 if (connectionStringEncryption == false)
 {
@@ -61,6 +58,7 @@ else
     }
 }
 
+builder.Services.Configure<MySettings>(builder.Configuration.GetSection("MySettings"));
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 // Update the existing line to fix the error.
 builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(decryptedConnectionString), ServiceLifetime.Scoped);
@@ -162,11 +160,22 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
 
+// ✅ 3️⃣ Add Authorization Policy (DI SINI TEMPATNYA)
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("NotExternal", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var userType = context.User.FindFirst("UserType")?.Value;
+            // ❌ hanya External yang dilarang
+            return !string.IsNullOrEmpty(userType) && userType != ConstantaData.EXTERNAL;
+        }));
+});
+
+
 var corsAllow = builder.Configuration.GetSection("AppSettings:CorsAllowAll").Value ?? "false";
 
 var app = builder.Build();
-
-app.MapHealthChecks("/health");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

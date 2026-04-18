@@ -1,0 +1,257 @@
+﻿CREATE OR REPLACE FUNCTION get_for_ahu(
+    p_insert_date DATE,
+    p_customer_code VARCHAR DEFAULT NULL,
+    p_search VARCHAR DEFAULT NULL,
+    p_sort_by VARCHAR DEFAULT 'id',
+    p_sort_dir VARCHAR DEFAULT 'ASC',
+    p_start_take INT DEFAULT 0,
+    p_page_size INT DEFAULT 50,
+    p_user_type VARCHAR DEFAULT '',
+    p_client_code VARCHAR DEFAULT NULL
+)
+RETURNS TABLE (
+    total_count BIGINT,
+    result JSON
+)
+LANGUAGE plpgsql AS
+$$
+DECLARE
+    sql_base TEXT;
+    sql_where TEXT := ' WHERE d.deleted_status = false 
+                          AND d.import_status = true
+                          AND d.insert_date IS NOT NULL ';
+    sql_search TEXT := '';
+    sql_sort TEXT := '';
+    sql_final TEXT;
+    rec_count BIGINT;
+BEGIN
+    -- Filter insert date
+    sql_where := sql_where || format(
+        ' AND ( d.insert_date::date = %L 
+             OR (d.is_duplicate = true AND d.duplicated_date::date = %L) ) ',
+        p_insert_date, p_insert_date
+    );
+
+    -- Filter internal user
+    IF p_user_type = 'INTERNAL' THEN
+        sql_where := sql_where || format(' AND d.client_code = %L ', p_client_code);
+    END IF;
+
+    -- Filter customer
+    IF p_customer_code IS NOT NULL THEN
+        sql_where := sql_where || format(' AND d.customer_code = %L ', p_customer_code);
+    END IF;
+
+    -- Search handling
+    IF p_search IS NOT NULL THEN
+        sql_search := sql_search || format(
+            ' AND (
+                d.client_code ILIKE %L OR
+                c.client_name ILIKE %L OR
+                d.customer_code ILIKE %L OR
+                p.customer_name ILIKE %L OR
+                d.no_registrasi ILIKE %L OR
+                d.no_voucher ILIKE %L OR
+                d.no_pembiayaan ILIKE %L OR
+                d.no_sertifikat ILIKE %L
+              ) ',
+            '%'||p_search||'%', '%'||p_search||'%', '%'||p_search||'%',
+            '%'||p_search||'%', '%'||p_search||'%', '%'||p_search||'%',
+            '%'||p_search||'%', '%'||p_search||'%'
+        );
+    END IF;
+
+    -- Sorting
+    sql_sort := format(' ORDER BY %I %s ', p_sort_by, p_sort_dir);
+
+    -- Base query
+    sql_base := '
+        FROM documents d
+        JOIN customers p ON p.customer_code = d.customer_code 
+                         AND p.client_code = d.client_code
+        JOIN clients c ON c.client_code = d.client_code
+        LEFT JOIN notaris n ON n.client_code = d.client_code
+        LEFT JOIN notaris t ON t.notaris_code = d.notaris_code 
+                           AND t.client_code = d.client_code
+        LEFT JOIN branches b ON b.branch_code = d.branch_code
+    ';
+
+    -- Count query
+    EXECUTE 'SELECT COUNT(*) ' || sql_base || sql_where || sql_search
+    INTO rec_count;
+
+    -- Final paginated result
+    sql_final := '
+        SELECT row_to_json(q) FROM (
+            SELECT *
+            ' || sql_base || sql_where || sql_search || sql_sort ||
+           format(' LIMIT %s OFFSET %s ', p_page_size, p_start_take) ||
+        ') q';
+
+    RETURN QUERY
+    SELECT rec_count, json_agg(result)
+    FROM (
+        EXECUTE sql_final
+    ) AS t(result);
+
+END;
+$$;
+
+
+
+
+
+
+CREATE OR REPLACE FUNCTION sp_updatecertificatedocumentmodel(
+    p_usertype INT,
+    p_clientcode VARCHAR(50),
+    p_certificateby VARCHAR(256),
+    p_params JSONB
+)
+RETURNS TABLE (
+    ClientRowId UUID,
+    ID BIGINT,
+    CLIENT_CODE VARCHAR,
+    CLIENT_NAME VARCHAR,
+    CUSTOMER_CODE VARCHAR,
+    CUSTOMER_NAME VARCHAR,
+    CUSTOMER_NPWP VARCHAR,
+    BRANCH_CODE VARCHAR,
+    BRANCH_NAME VARCHAR,
+    NO_VOUCHER VARCHAR,
+    NOTARIS_CODE VARCHAR,
+    NOTARIS_NAME VARCHAR,
+    NOMOR_AKTA VARCHAR,
+    TANGGAL_AKTA DATE,
+    NAMA_PEMBERIFIDUSIA VARCHAR,
+    NPWP_PEMBERIFIDUSIA VARCHAR,
+    NILAI_JAMINAN NUMERIC,
+    PRICE_PNBP NUMERIC,
+    FEE_COST NUMERIC,
+    TAX_COST NUMERIC
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    ---------------------------------------------------------------------
+    -- PARSE JSON → TEMP TABLE
+    ---------------------------------------------------------------------
+    CREATE TEMP TABLE tmp_params AS
+    SELECT
+        (elem->>'ClientRowId')::uuid AS ClientRowId,
+        elem->>'NO_VOUCHER_N' AS NO_VOUCHER_N,
+        elem->>'NOMOR_AKTA' AS NOMOR_AKTA,
+        (elem->>'TANGGAL_AKTA')::date AS TANGGAL_AKTA,
+        elem->>'NOTARIS_NAME_N' AS NOTARIS_NAME_N,
+        elem->>'NAMA_PEMBERI_N' AS NAMA_PEMBERI_N,
+        elem->>'NAMA_PENERIMA_N' AS NAMA_PENERIMA_N,
+        elem->>'NO_SERTIFIKAT' AS NO_SERTIFIKAT,
+        elem->>'NO_REGISTRASI' AS NO_REGISTRASI,
+        elem->>'NO_PEMBIAYAAN' AS NO_PEMBIAYAAN,
+        (elem->>'StatusCertificate')::int AS StatusCertificate,
+        (elem->>'WaktuDaftar')::timestamp AS WaktuDaftar
+    FROM jsonb_array_elements(p_params) AS elem;
+
+    ---------------------------------------------------------------------
+    -- MATCH CTE (converted)
+    ---------------------------------------------------------------------
+    WITH MatchCte AS (
+        SELECT DISTINCT
+            d.id,
+            d.client_code,
+            p.ClientRowId,
+            p.NO_SERTIFIKAT,
+            p.NO_REGISTRASI,
+            p.NO_PEMBIAYAAN,
+            p.StatusCertificate,
+            p.WaktuDaftar
+        FROM documents d
+        JOIN customers c
+          ON c.customer_code = d.customer_code
+         AND c.client_code = d.client_code
+         AND c.isactive = TRUE
+        JOIN clients l
+          ON l.client_code = d.client_code
+         AND l.isactive = TRUE
+        JOIN pnbps b
+          ON b.customer_code = d.customer_code
+         AND b.client_code = d.client_code
+         AND b.isactive = TRUE
+         AND d.nilai_jaminan BETWEEN b.min_value AND b.max_value
+        JOIN clientfees f
+          ON f.customer_code = d.customer_code
+         AND f.client_code = d.client_code
+         AND f.isactive = TRUE
+        LEFT JOIN branches br
+          ON br.branch_code = d.branch_code
+        JOIN notaris n
+          ON n.notaris_code = d.notaris_code
+         AND n.client_code = d.client_code
+        JOIN tmp_params p
+          ON
+            (p.NO_VOUCHER_N IS NOT NULL AND p.NO_VOUCHER_N = d.no_voucher_n)
+            OR (
+                p.NO_VOUCHER_N IS NULL
+                AND p.NOMOR_AKTA = d.nomor_akta
+                AND p.TANGGAL_AKTA = d.tanggal_akta::date
+                AND p.NOTARIS_NAME_N = n.notaris_name_n
+                AND p.NAMA_PEMBERI_N = d.nama_pemberifidusia_n
+                AND p.NAMA_PENERIMA_N = c.customer_name_n
+            )
+        WHERE d.deleted_status = 0
+          AND d.ahu_status = 1
+          AND d.tanggal_akta IS NOT NULL
+          AND (p_usertype <> 1 OR d.client_code = p_clientcode)
+    )
+
+    ---------------------------------------------------------------------
+    -- UPDATE USING CTE
+    ---------------------------------------------------------------------
+    UPDATE documents d
+       SET no_sertifikat = CASE WHEN m.StatusCertificate = 1 THEN NULLIF(m.NO_SERTIFIKAT,'') ELSE d.no_sertifikat END,
+           tgl_sertifikat = CASE WHEN m.StatusCertificate = 1 THEN m.WaktuDaftar ELSE d.tgl_sertifikat END,
+           certificate_status = CASE WHEN m.StatusCertificate = 1 THEN 1 ELSE d.certificate_status END,
+           certificate_by = CASE WHEN m.StatusCertificate = 1 THEN p_certificateby ELSE d.certificate_by END,
+           certificate_date = CASE WHEN m.StatusCertificate = 1 THEN NOW() AT TIME ZONE 'UTC' ELSE d.certificate_date END,
+           no_voucher = COALESCE(d.no_voucher, ''),
+           no_registrasi = COALESCE(NULLIF(m.no_registrasi,''), d.no_registrasi),
+           no_pembiayaan = COALESCE(NULLIF(m.no_pembiayaan,''), d.no_pembiayaan)
+    FROM MatchCte m
+    WHERE d.id = m.id;
+
+    ---------------------------------------------------------------------
+    -- RETURN RESULTSET
+    ---------------------------------------------------------------------
+    RETURN QUERY
+    SELECT 
+        m.ClientRowId,
+        d.id,
+        d.client_code,
+        l.client_name,
+        d.customer_code,
+        c.customer_name,
+        c.npwp AS customer_npwp,
+        d.branch_code,
+        COALESCE(br.branch_name, d.branch_code),
+        d.no_voucher,
+        d.notaris_code,
+        n.notaris_name,
+        d.nomor_akta,
+        d.tanggal_akta,
+        d.nama_pemberifidusia,
+        d.npwp_pemberifidusia,
+        d.nilai_jaminan,
+        b.price,
+        f.fee_cost,
+        f.tax_cost
+    FROM MatchCte m
+    JOIN documents d ON d.id = m.id
+    JOIN customers c ON c.customer_code = d.customer_code AND c.client_code = d.client_code
+    JOIN clients l ON l.client_code = d.client_code
+    LEFT JOIN branches br ON br.branch_code = d.branch_code
+    JOIN notaris n ON n.notaris_code = d.notaris_code AND n.client_code = d.client_code
+    JOIN pnbps b ON b.customer_code = d.customer_code AND b.client_code = d.client_code
+    JOIN clientfees f ON f.customer_code = d.customer_code AND f.client_code = d.client_code;
+
+END;
+$$;

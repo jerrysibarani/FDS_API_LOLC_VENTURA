@@ -1,14 +1,13 @@
 ﻿using API.Data;
-using API.IServices;
-using API.Models.Params;
-using API.Models;
-using Microsoft.AspNetCore.Mvc;
+using API.Data.Entities;
 using API.Helpers;
+using API.IServices;
 using API.Model;
+using API.Models;
+using API.Models.Params;
 using API.Models.Views;
-using Newtonsoft.Json;
-using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace API.Services
 {
@@ -17,10 +16,844 @@ namespace API.Services
     ) : IDataService
     {
         private readonly AppDbContext _dbContext = dbContext;
-
-        public async Task<ResponseModel> GetForAHU(Principal currentUser, ParamData param)
+        public async Task<ResponseModel> GetForAHU_Keyset(Principal UserCurrent, ParamData Param, CancellationToken cancellationToken = default)
         {
-            //var insertDateUtc = DateTime.SpecifyKind(param.InsertDate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
+
+            var startDate = Param.InsertDate.ToDateTime(TimeOnly.MinValue);
+            var endDate = startDate.AddDays(1);
+            //var notarisDefault = await _dbContext.Notaris
+            //                    .AsNoTracking()
+            //                    .Where(n =>
+            //                        n.ISACTIVE &&
+            //                        _dbContext.Customers.Any(c =>
+            //                            c.CLIENT_CODE == n.CLIENT_CODE &&
+            //                            c.ISACTIVE &&
+            //                            c.CUSTOMER_CODE == Param.CustomerCode
+            //                        ))
+            //                    .FirstOrDefaultAsync();
+
+            IQueryable <DataModels> query = from d in _dbContext.Documents.AsNoTracking()
+                                              join p in _dbContext.Customers.AsNoTracking() on new { d.CUSTOMER_CODE, d.CLIENT_CODE } equals new { p.CUSTOMER_CODE, p.CLIENT_CODE }
+                                              join c in _dbContext.Clients.AsNoTracking() on d.CLIENT_CODE equals c.CLIENT_CODE
+                                              join t in _dbContext.Notaris.AsNoTracking() on new { d.NOTARIS_CODE, d.CLIENT_CODE } equals new { t.NOTARIS_CODE, t.CLIENT_CODE } into ntrsDefault
+                                              from t in ntrsDefault.DefaultIfEmpty()
+                                              join b in _dbContext.Branches.AsNoTracking() on d.BRANCH_CODE equals b.BRANCH_CODE into bcDefault
+                                              from b in bcDefault.DefaultIfEmpty()
+                                              where
+                                                !d.DELETED_STATUS &&
+                                                d.IMPORT_STATUS &&
+                                                p.ISACTIVE &&
+                                                c.ISACTIVE &&
+                                                (
+                                                  (d.INSERT_DATE.HasValue && d.INSERT_DATE >= startDate && d.INSERT_DATE < endDate) ||
+                                                  (d.IS_DUPLICATE && d.DUPLICATED_DATE.HasValue && d.DUPLICATED_DATE >= startDate && d.DUPLICATED_DATE < endDate)
+                                                )
+                                            select new DataModels
+                                              {
+                                                  ID = d.ID,
+                                                  CLIENT_CODE = d.CLIENT_CODE,
+                                                  CLIENT_NAME = c.CLIENT_NAME,
+                                                  CUSTOMER_CODE = d.CUSTOMER_CODE,
+                                                  CUSTOMER_NAME = p.CUSTOMER_NAME,
+                                                  TYPE_FIDUSIA = d.TYPE_FIDUSIA,
+                                                  BRANCH_CODE = d.BRANCH_CODE,
+                                                  BRANCH_NAME = b.BRANCH_NAME ?? d.BRANCH_CODE,
+                                                  NOTARIS_CODE = d.NOTARIS_CODE,
+                                                  NOTARIS_NAME = t.NOTARIS_NAME,
+                                                  NO_REGISTRASI = d.NO_REGISTRASI,
+                                                  NO_VOUCHER = d.NO_VOUCHER,
+                                                  NO_PEMBIAYAAN = d.NO_PEMBIAYAAN,
+                                                  NO_SERTIFIKAT = d.NO_SERTIFIKAT,
+                                                  TGL_SERTIFIKAT = d.TGL_SERTIFIKAT,
+                                                  JAM_MINUTA = d.JAM_MINUTA,
+                                                  TANGGAL_AKTA = d.TANGGAL_AKTA,
+                                                  NOMOR_AKTA = d.NOMOR_AKTA,
+                                                  TIPE_PEMBERIFIDUSIA = d.TIPE_PEMBERIFIDUSIA,
+                                                  ID_PEMBERIFIDUSIA = d.ID_PEMBERIFIDUSIA,
+                                                  NPWP_PEMBERIFIDUSIA = d.NPWP_PEMBERIFIDUSIA,
+                                                  NAMA_PEMBERIFIDUSIA = d.NAMA_PEMBERIFIDUSIA,
+                                                  JK_PEMBERIFIDUSIA = d.JK_PEMBERIFIDUSIA,
+                                                  MARITAL_PEMBERIFIDUSIA = d.MARITAL_PEMBERIFIDUSIA,
+                                                  TPTLAHIR_PEMBERIFIDUSIA = d.TPTLAHIR_PEMBERIFIDUSIA,
+                                                  TGLLAHIR_PEMBERIFIDUSIA = d.TGLLAHIR_PEMBERIFIDUSIA,
+                                                  PEKERJAAN_PEMBERIFIDUSIA = d.PEKERJAAN_PEMBERIFIDUSIA,
+                                                  ALAMAT_PEMBERIFIDUSIA = d.ALAMAT_PEMBERIFIDUSIA,
+                                                  RT_PEMBERIFIDUSIA = d.RT_PEMBERIFIDUSIA,
+                                                  RW_PEMBERIFIDUSIA = d.RW_PEMBERIFIDUSIA,
+                                                  KELURAHAN_PEMBERIFIDUSIA = d.KELURAHAN_PEMBERIFIDUSIA,
+                                                  KECAMATAN_PEMBERIFIDUSIA = d.KECAMATAN_PEMBERIFIDUSIA,
+                                                  KABUPATEN_PEMBERIFIDUSIA = d.KABUPATEN_PEMBERIFIDUSIA,
+                                                  PROVINSI_PEMBERIFIDUSIA = d.PROVINSI_PEMBERIFIDUSIA,
+                                                  POS_PEMBERIFIDUSIA = d.POS_PEMBERIFIDUSIA,
+                                                  HP_PEMBERIFIDUSIA = d.HP_PEMBERIFIDUSIA,
+                                                  ID_PASANGAN = d.ID_PASANGAN,
+                                                  NAMA_PASANGAN = d.NAMA_PASANGAN,
+                                                  JK_PASANGAN = d.JK_PASANGAN,
+                                                  MARITAL_PASANGAN = d.MARITAL_PASANGAN,
+                                                  TPTLAHIR_PASANGAN = d.TPTLAHIR_PASANGAN,
+                                                  TGLLAHIR_PASANGAN = d.TGLLAHIR_PASANGAN,
+                                                  ID_DEBITUR = d.ID_DEBITUR,
+                                                  NAMA_DEBITUR = d.NAMA_DEBITUR,
+                                                  JK_DEBITUR = d.JK_DEBITUR,
+                                                  MARITAL_DEBITUR = d.MARITAL_DEBITUR,
+                                                  TPTLAHIR_DEBITUR = d.TPTLAHIR_DEBITUR,
+                                                  TGLLAHIR_DEBITUR = d.TGLLAHIR_DEBITUR,
+                                                  ALAMAT_DEBITUR = d.ALAMAT_DEBITUR,
+                                                  RT_DEBITUR = d.RT_DEBITUR,
+                                                  RW_DEBITUR = d.RW_DEBITUR,
+                                                  KELURAHAN_DEBITUR = d.KELURAHAN_DEBITUR,
+                                                  KECAMATAN_DEBITUR = d.KECAMATAN_DEBITUR,
+                                                  KABUPATEN_DEBITUR = d.KABUPATEN_DEBITUR,
+                                                  PROVINSI_DEBITUR = d.PROVINSI_DEBITUR,
+                                                  POS_DEBITUR = d.POS_DEBITUR,
+                                                  HP_DEBITUR = d.HP_DEBITUR,
+                                                  TANGGAL_ORDER = d.TANGGAL_ORDER,
+                                                  TANGGAL_KONTRAK = d.TANGGAL_KONTRAK,
+                                                  NOMOR_KONTRAK = d.NOMOR_KONTRAK,
+                                                  HUTANG_POKOK = d.HUTANG_POKOK,
+                                                  NILAI_JAMINAN = d.NILAI_JAMINAN,
+                                                  NILAI_BARANG = d.NILAI_BARANG,
+                                                  CATEGORY_OBJECT = d.CATEGORY_OBJECT,
+                                                  JENIS_OBJECT = d.JENIS_OBJECT,
+                                                  MODEL = d.MODEL,
+                                                  MERK = d.MERK,
+                                                  TIPE = d.TIPE,
+                                                  TAHUN = d.TAHUN,
+                                                  WARNA = d.WARNA,
+                                                  NOMOR_RANGKA = d.NOMOR_RANGKA,
+                                                  NOMOR_MESIN = d.NOMOR_MESIN,
+                                                  NOMOR_POLISI = d.NOMOR_POLISI,
+                                                  NOMOR_BPKB = d.NOMOR_BPKB,
+                                                  NAMA_BPKB = d.NAMA_BPKB,
+                                                  PEMILIK_BPKB = d.PEMILIK_BPKB,
+                                                  TENOR = d.TENOR,
+                                                  TANGGAL_AWAL_TENOR = d.TANGGAL_AWAL_TENOR,
+                                                  TANGGAL_AKHIR_TENOR = d.TANGGAL_AKHIR_TENOR,
+                                                  TYPE_PRODUK = d.TYPE_PRODUK,
+                                                  WAY_OF_FINANCING = d.WAY_OF_FINANCING,
+                                                  NAMA_KWITANSI = d.NAMA_KWITANSI,
+                                                  INSERT_DATE = d.INSERT_DATE,
+                                                  AHU_BY = d.AHU_BY,
+                                                  AHU_DATE = d.AHU_DATE,
+                                                  AHU_STATUS = d.AHU_STATUS,
+                                                  USER_BY = d.USER_BY,
+                                                  CERTIFICATE_BY = d.CERTIFICATE_BY,
+                                                  CERTIFICATE_DATE = d.CERTIFICATE_DATE,
+                                                  CERTIFICATE_STATUS = d.CERTIFICATE_STATUS,
+                                                  CREATED_BY = d.CREATED_BY,
+                                                  CREATED_DATE = d.CREATED_DATE,
+                                                  MODIFIED_BY = d.MODIFIED_BY,
+                                                  MODIFIED_DATE = d.MODIFIED_DATE,
+                                                  DELETED_STATUS = d.DELETED_STATUS,
+                                                  DELETED_DATE = d.DELETED_DATE,
+                                                  DELETED_BY = d.DELETED_BY,
+                                                  MESSAGES = d.MESSAGES,
+                                                  IS_DUPLICATE = d.IS_DUPLICATE,
+                                                  DUPLICATED_DATE = d.DUPLICATED_DATE,
+
+                                                  TIPE_CUSTOMER = p.TIPE,
+                                                  SUB_TIPE_CUSTOMER = p.SUB_TIPE,
+                                                  TIPE_NAME_CUSTOMER = p.TIPE_NAME,
+                                                  JENIS_CUSTOMER = p.JENIS,
+                                                  NPWP_CUSTOMER = p.NPWP,
+                                                  NIK_CUSTOMER = p.NIK,
+                                                  SK_CUSTOMER = p.SK,
+                                                  NEGARA_ASAL_CUSTOMER = p.NEGARA_ASAL,
+                                                  TELP_CUSTOMER = p.TELP,
+                                                  EMAIL_CUSTOMER = p.EMAIL,
+                                                  KANTOR_CABANG_CUSTOMER = p.KANTOR_CABANG,
+                                                  ALAMAT_CUSTOMER = p.ALAMAT,
+                                                  RT_CUSTOMER = p.RT,
+                                                  RW_CUSTOMER = p.RW,
+                                                  PROVINSI_CUSTOMER = p.PROVINSI,
+                                                  KOTA_CUSTOMER = p.KOTA,
+                                                  KECAMATAN_CUSTOMER = p.KECAMATAN,
+                                                  KELURAHAN_CUSTOMER = p.KELURAHAN,
+                                                  POS_CUSTOMER = p.POS
+                                              };
+
+            // ===============================
+            // KEYSET CONDITION
+            // ===============================
+            //if (Param.StartRecord > 0)
+            //{
+            //    query = query.Where(x => x.ID > Param.StartRecord);
+            //}
+
+            // ===============================
+            // User Filter
+            // ===============================
+            if (UserCurrent.UserType == ConstantaData.INTERNAL)
+            {
+                query = query.Where(x => x.CLIENT_CODE == UserCurrent.ClientCode);
+            }
+
+            if (!string.IsNullOrEmpty(Param.CustomerCode))
+            {
+                query = query.Where(x => x.CUSTOMER_CODE == Param.CustomerCode);
+            }
+
+
+            // ===============================
+            // Search (PostgreSQL Friendly)
+            // ===============================
+            if (!string.IsNullOrEmpty(Param.ParamSearch))
+            {
+                var search = Param.ParamSearch.Trim();
+                if (bool.TryParse(search, out bool ahuStatus))
+                {
+                    query = query.Where(x => x.AHU_STATUS == ahuStatus);
+                }
+                else
+                {
+                    query = query.Where(x =>
+                        (x.CLIENT_CODE != null && EF.Functions.ILike(x.CLIENT_CODE, $"%{search}%")) ||
+                        (x.CLIENT_NAME != null && EF.Functions.ILike(x.CLIENT_NAME, $"%{search}%")) ||
+                        (x.CUSTOMER_CODE != null && EF.Functions.ILike(x.CUSTOMER_CODE, $"%{search}%")) ||
+                        (x.CUSTOMER_NAME != null && EF.Functions.ILike(x.CUSTOMER_NAME, $"%{search}%")) ||
+                        (x.BRANCH_CODE != null && EF.Functions.ILike(x.BRANCH_CODE, $"%{search}%")) ||
+                        (x.BRANCH_NAME != null && EF.Functions.ILike(x.BRANCH_NAME, $"%{search}%")) ||
+                        (x.NOTARIS_CODE != null && EF.Functions.ILike(x.NOTARIS_CODE, $"%{search}%")) ||
+                        (x.NOTARIS_NAME != null && EF.Functions.ILike(x.NOTARIS_NAME, $"%{search}%")) ||
+                        //(x.NO_REGISTRASI != null && EF.Functions.ILike(x.NO_REGISTRASI, $"%{search}%")) ||
+                        //(x.NO_VOUCHER != null && EF.Functions.ILike(x.NO_VOUCHER, $"%{search}%")) ||
+                        //(x.NO_PEMBIAYAAN != null && EF.Functions.ILike(x.NO_PEMBIAYAAN, $"%{search}%")) ||
+                        //(x.NO_SERTIFIKAT != null && EF.Functions.ILike(x.NO_SERTIFIKAT, $"%{search}%")) ||
+                        (x.NOMOR_AKTA != null && EF.Functions.ILike(x.NOMOR_AKTA, $"%{search}%")) ||
+                        (x.ID_PEMBERIFIDUSIA != null && EF.Functions.ILike(x.ID_PEMBERIFIDUSIA, $"%{search}%")) ||
+                        (x.NPWP_PEMBERIFIDUSIA != null && EF.Functions.ILike(x.NPWP_PEMBERIFIDUSIA, $"%{search}%")) ||
+                        (x.NAMA_PEMBERIFIDUSIA != null && EF.Functions.ILike(x.NAMA_PEMBERIFIDUSIA, $"%{search}%")) ||
+                        (x.NAMA_PASANGAN != null && EF.Functions.ILike(x.NAMA_PASANGAN, $"%{search}%")) ||
+                        (x.NAMA_DEBITUR != null && EF.Functions.ILike(x.NAMA_DEBITUR, $"%{search}%")) ||
+                        (x.NOMOR_KONTRAK != null && EF.Functions.ILike(x.NOMOR_KONTRAK, $"%{search}%")) ||
+                        (x.JENIS_OBJECT != null && EF.Functions.ILike(x.JENIS_OBJECT, $"%{search}%")) ||
+                        (x.NOMOR_RANGKA != null && EF.Functions.ILike(x.NOMOR_RANGKA, $"%{search}%")) ||
+                        (x.NOMOR_MESIN != null && EF.Functions.ILike(x.NOMOR_MESIN, $"%{search}%")) ||
+                        (x.NOMOR_POLISI != null && EF.Functions.ILike(x.NOMOR_POLISI, $"%{search}%")) ||
+                        (x.NOMOR_BPKB != null && EF.Functions.ILike(x.NOMOR_BPKB, $"%{search}%")) ||
+                        (x.NAMA_KWITANSI != null && EF.Functions.ILike(x.NAMA_KWITANSI, $"%{search}%")) 
+                    );
+
+                    if (DateTime.TryParseExact(search,"yyyy-MM-dd",CultureInfo.InvariantCulture,DateTimeStyles.None,out DateTime parsedDate))
+                    {
+                        var ds = parsedDate.Date;
+                        var de = ds.AddDays(1);
+                        query = query.Where(x =>
+                                (x.INSERT_DATE >= ds && x.INSERT_DATE < de) ||
+                                (x.TANGGAL_AKTA.HasValue && x.TANGGAL_AKTA >= ds && x.TANGGAL_AKTA < de) ||
+                                (x.TANGGAL_ORDER.HasValue && x.TANGGAL_ORDER >= ds && x.TANGGAL_ORDER < de) ||
+                                (x.TANGGAL_KONTRAK.HasValue && x.TANGGAL_KONTRAK >= ds && x.TANGGAL_KONTRAK < de) ||
+                                (x.TGL_SERTIFIKAT.HasValue && x.TGL_SERTIFIKAT >= ds && x.TGL_SERTIFIKAT < de)
+                        );
+                    }
+                }
+            }
+
+            // ===============================
+            // ORDER + LIMIT
+            // ===============================
+
+            //var data = await query
+            //    .OrderBy(x => x.ID)
+            //    .Take(Param.PageSize)
+            //    .AsNoTracking()
+            //    .ToListAsync(cancellationToken);
+
+            //long? nextCursor = data.LastOrDefault()?.ID;
+
+            //return new ResponseModel(
+            //    ResponseCode.OK,
+            //    "Success",
+            //    data.Count,
+            //    new
+            //    {
+            //        Items = data,
+            //        NextCursor = nextCursor
+            //    }
+            //);
+
+            // Pagination and execution
+            var total = await query.CountAsync();
+            var dataList = await query
+                .OrderBy(x => x.ID)
+                .Skip(Param.StartRecord)
+                .Take(Param.PageSize)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+            return new ResponseModel(ResponseCode.OK, "Success", total, dataList);
+
+        }
+
+        public async Task<ResponseModel> GetForCertificate_Keyset(Principal UserCurrent, ParamData Param, CancellationToken cancellationToken = default)
+        {
+
+            var startDate = Param.InsertDate.ToDateTime(TimeOnly.MinValue);
+            var endDate = startDate.AddDays(1);
+            IQueryable<DataModels> query = from d in _dbContext.Documents.AsNoTracking()
+                                           join p in _dbContext.Customers.AsNoTracking() on new { d.CUSTOMER_CODE, d.CLIENT_CODE } equals new { p.CUSTOMER_CODE, p.CLIENT_CODE }
+                                           join c in _dbContext.Clients.AsNoTracking() on d.CLIENT_CODE equals c.CLIENT_CODE
+                                           join t in _dbContext.Notaris.AsNoTracking() on new { d.NOTARIS_CODE, d.CLIENT_CODE } equals new { t.NOTARIS_CODE, t.CLIENT_CODE } into ntrsDefault
+                                           from t in ntrsDefault.DefaultIfEmpty()
+                                           join b in _dbContext.Branches.AsNoTracking() on d.BRANCH_CODE equals b.BRANCH_CODE into bcDefault
+                                           from b in bcDefault.DefaultIfEmpty()
+                                           where
+                                                !d.DELETED_STATUS &&
+                                                d.AHU_STATUS &&
+                                                d.IMPORT_STATUS &&
+                                                p.ISACTIVE &&
+                                                c.ISACTIVE &&
+                                                ( 
+                                                  (d.INSERT_DATE.HasValue && d.INSERT_DATE >= startDate && d.INSERT_DATE < endDate) || 
+                                                  (d.IS_DUPLICATE && d.DUPLICATED_DATE.HasValue && d.DUPLICATED_DATE >= startDate && d.DUPLICATED_DATE < endDate) 
+                                                )
+                                           select new DataModels
+                                           {
+                                               ID = d.ID,
+                                               CLIENT_CODE = d.CLIENT_CODE,
+                                               CLIENT_NAME = c.CLIENT_NAME,
+                                               CUSTOMER_CODE = d.CUSTOMER_CODE,
+                                               CUSTOMER_NAME = p.CUSTOMER_NAME,
+                                               TYPE_FIDUSIA = d.TYPE_FIDUSIA,
+                                               BRANCH_CODE = d.BRANCH_CODE,
+                                               BRANCH_NAME = b.BRANCH_NAME ?? d.BRANCH_CODE,
+                                               NOTARIS_CODE = d.NOTARIS_CODE,
+                                               NOTARIS_NAME = t.NOTARIS_NAME,
+                                               NO_REGISTRASI = d.NO_REGISTRASI,
+                                               NO_VOUCHER = d.NO_VOUCHER,
+                                               NO_PEMBIAYAAN = d.NO_PEMBIAYAAN,
+                                               NO_SERTIFIKAT = d.NO_SERTIFIKAT,
+                                               TGL_SERTIFIKAT = d.TGL_SERTIFIKAT,
+                                               JAM_MINUTA = d.JAM_MINUTA,
+                                               TANGGAL_AKTA = d.TANGGAL_AKTA,
+                                               NOMOR_AKTA = d.NOMOR_AKTA,
+                                               TIPE_PEMBERIFIDUSIA = d.TIPE_PEMBERIFIDUSIA,
+                                               ID_PEMBERIFIDUSIA = d.ID_PEMBERIFIDUSIA,
+                                               NPWP_PEMBERIFIDUSIA = d.NPWP_PEMBERIFIDUSIA,
+                                               NAMA_PEMBERIFIDUSIA = d.NAMA_PEMBERIFIDUSIA,
+                                               JK_PEMBERIFIDUSIA = d.JK_PEMBERIFIDUSIA,
+                                               MARITAL_PEMBERIFIDUSIA = d.MARITAL_PEMBERIFIDUSIA,
+                                               TPTLAHIR_PEMBERIFIDUSIA = d.TPTLAHIR_PEMBERIFIDUSIA,
+                                               TGLLAHIR_PEMBERIFIDUSIA = d.TGLLAHIR_PEMBERIFIDUSIA,
+                                               PEKERJAAN_PEMBERIFIDUSIA = d.PEKERJAAN_PEMBERIFIDUSIA,
+                                               ALAMAT_PEMBERIFIDUSIA = d.ALAMAT_PEMBERIFIDUSIA,
+                                               RT_PEMBERIFIDUSIA = d.RT_PEMBERIFIDUSIA,
+                                               RW_PEMBERIFIDUSIA = d.RW_PEMBERIFIDUSIA,
+                                               KELURAHAN_PEMBERIFIDUSIA = d.KELURAHAN_PEMBERIFIDUSIA,
+                                               KECAMATAN_PEMBERIFIDUSIA = d.KECAMATAN_PEMBERIFIDUSIA,
+                                               KABUPATEN_PEMBERIFIDUSIA = d.KABUPATEN_PEMBERIFIDUSIA,
+                                               PROVINSI_PEMBERIFIDUSIA = d.PROVINSI_PEMBERIFIDUSIA,
+                                               POS_PEMBERIFIDUSIA = d.POS_PEMBERIFIDUSIA,
+                                               HP_PEMBERIFIDUSIA = d.HP_PEMBERIFIDUSIA,
+                                               ID_PASANGAN = d.ID_PASANGAN,
+                                               NAMA_PASANGAN = d.NAMA_PASANGAN,
+                                               JK_PASANGAN = d.JK_PASANGAN,
+                                               MARITAL_PASANGAN = d.MARITAL_PASANGAN,
+                                               TPTLAHIR_PASANGAN = d.TPTLAHIR_PASANGAN,
+                                               TGLLAHIR_PASANGAN = d.TGLLAHIR_PASANGAN,
+                                               ID_DEBITUR = d.ID_DEBITUR,
+                                               NAMA_DEBITUR = d.NAMA_DEBITUR,
+                                               JK_DEBITUR = d.JK_DEBITUR,
+                                               MARITAL_DEBITUR = d.MARITAL_DEBITUR,
+                                               TPTLAHIR_DEBITUR = d.TPTLAHIR_DEBITUR,
+                                               TGLLAHIR_DEBITUR = d.TGLLAHIR_DEBITUR,
+                                               ALAMAT_DEBITUR = d.ALAMAT_DEBITUR,
+                                               RT_DEBITUR = d.RT_DEBITUR,
+                                               RW_DEBITUR = d.RW_DEBITUR,
+                                               KELURAHAN_DEBITUR = d.KELURAHAN_DEBITUR,
+                                               KECAMATAN_DEBITUR = d.KECAMATAN_DEBITUR,
+                                               KABUPATEN_DEBITUR = d.KABUPATEN_DEBITUR,
+                                               PROVINSI_DEBITUR = d.PROVINSI_DEBITUR,
+                                               POS_DEBITUR = d.POS_DEBITUR,
+                                               HP_DEBITUR = d.HP_DEBITUR,
+                                               TANGGAL_ORDER = d.TANGGAL_ORDER,
+                                               TANGGAL_KONTRAK = d.TANGGAL_KONTRAK,
+                                               NOMOR_KONTRAK = d.NOMOR_KONTRAK,
+                                               HUTANG_POKOK = d.HUTANG_POKOK,
+                                               NILAI_JAMINAN = d.NILAI_JAMINAN,
+                                               NILAI_BARANG = d.NILAI_BARANG,
+                                               CATEGORY_OBJECT = d.CATEGORY_OBJECT,
+                                               JENIS_OBJECT = d.JENIS_OBJECT,
+                                               MODEL = d.MODEL,
+                                               MERK = d.MERK,
+                                               TIPE = d.TIPE,
+                                               TAHUN = d.TAHUN,
+                                               WARNA = d.WARNA,
+                                               NOMOR_RANGKA = d.NOMOR_RANGKA,
+                                               NOMOR_MESIN = d.NOMOR_MESIN,
+                                               NOMOR_POLISI = d.NOMOR_POLISI,
+                                               NOMOR_BPKB = d.NOMOR_BPKB,
+                                               NAMA_BPKB = d.NAMA_BPKB,
+                                               PEMILIK_BPKB = d.PEMILIK_BPKB,
+                                               TENOR = d.TENOR,
+                                               TANGGAL_AWAL_TENOR = d.TANGGAL_AWAL_TENOR,
+                                               TANGGAL_AKHIR_TENOR = d.TANGGAL_AKHIR_TENOR,
+                                               TYPE_PRODUK = d.TYPE_PRODUK,
+                                               WAY_OF_FINANCING = d.WAY_OF_FINANCING,
+                                               NAMA_KWITANSI = d.NAMA_KWITANSI,
+                                               INSERT_DATE = d.INSERT_DATE,
+                                               AHU_BY = d.AHU_BY,
+                                               AHU_DATE = d.AHU_DATE,
+                                               AHU_STATUS = d.AHU_STATUS,
+                                               USER_BY = d.USER_BY,
+                                               CERTIFICATE_BY = d.CERTIFICATE_BY,
+                                               CERTIFICATE_DATE = d.CERTIFICATE_DATE,
+                                               CERTIFICATE_STATUS = d.CERTIFICATE_STATUS,
+                                               CREATED_BY = d.CREATED_BY,
+                                               CREATED_DATE = d.CREATED_DATE,
+                                               MODIFIED_BY = d.MODIFIED_BY,
+                                               MODIFIED_DATE = d.MODIFIED_DATE,
+                                               DELETED_STATUS = d.DELETED_STATUS,
+                                               DELETED_DATE = d.DELETED_DATE,
+                                               DELETED_BY = d.DELETED_BY,
+                                               MESSAGES = d.MESSAGES,
+                                               IS_DUPLICATE = d.IS_DUPLICATE,
+                                               DUPLICATED_DATE = d.DUPLICATED_DATE,
+
+                                               TIPE_CUSTOMER = p.TIPE,
+                                               SUB_TIPE_CUSTOMER = p.SUB_TIPE,
+                                               TIPE_NAME_CUSTOMER = p.TIPE_NAME,
+                                               JENIS_CUSTOMER = p.JENIS,
+                                               NPWP_CUSTOMER = p.NPWP,
+                                               NIK_CUSTOMER = p.NIK,
+                                               SK_CUSTOMER = p.SK,
+                                               NEGARA_ASAL_CUSTOMER = p.NEGARA_ASAL,
+                                               TELP_CUSTOMER = p.TELP,
+                                               EMAIL_CUSTOMER = p.EMAIL,
+                                               KANTOR_CABANG_CUSTOMER = p.KANTOR_CABANG,
+                                               ALAMAT_CUSTOMER = p.ALAMAT,
+                                               RT_CUSTOMER = p.RT,
+                                               RW_CUSTOMER = p.RW,
+                                               PROVINSI_CUSTOMER = p.PROVINSI,
+                                               KOTA_CUSTOMER = p.KOTA,
+                                               KECAMATAN_CUSTOMER = p.KECAMATAN,
+                                               KELURAHAN_CUSTOMER = p.KELURAHAN,
+                                               POS_CUSTOMER = p.POS
+                                           };
+
+            // ===============================
+            // KEYSET CONDITION
+            // ===============================
+            //if (Param.StartRecord > 0)
+            //{
+            //    query = query.Where(x => x.ID > Param.StartRecord);
+            //}
+
+            // ===============================
+            // User Filter
+            // ===============================
+            if (UserCurrent.UserType == ConstantaData.INTERNAL)
+            {
+                query = query.Where(x => x.CLIENT_CODE == UserCurrent.ClientCode);
+            }
+
+            if (!string.IsNullOrEmpty(Param.CustomerCode))
+            {
+                query = query.Where(x => x.CUSTOMER_CODE == Param.CustomerCode);
+            }
+
+
+            // ===============================
+            // Search (PostgreSQL Friendly)
+            // ===============================
+            if (!string.IsNullOrEmpty(Param.ParamSearch))
+            {
+                var search = Param.ParamSearch.Trim();
+                if (bool.TryParse(search, out bool ahuStatus))
+                {
+                    query = query.Where(x => x.CERTIFICATE_STATUS == ahuStatus);
+                }
+                else
+                {
+                    query = query.Where(x =>
+                        (x.CLIENT_CODE != null && EF.Functions.ILike(x.CLIENT_CODE, $"%{search}%")) ||
+                        (x.CLIENT_NAME != null && EF.Functions.ILike(x.CLIENT_NAME, $"%{search}%")) ||
+                        (x.CUSTOMER_CODE != null && EF.Functions.ILike(x.CUSTOMER_CODE, $"%{search}%")) ||
+                        (x.CUSTOMER_NAME != null && EF.Functions.ILike(x.CUSTOMER_NAME, $"%{search}%")) ||
+                        (x.BRANCH_CODE != null && EF.Functions.ILike(x.BRANCH_CODE, $"%{search}%")) ||
+                        (x.BRANCH_NAME != null && EF.Functions.ILike(x.BRANCH_NAME, $"%{search}%")) ||
+                        (x.NOTARIS_CODE != null && EF.Functions.ILike(x.NOTARIS_CODE, $"%{search}%")) ||
+                        (x.NOTARIS_NAME != null && EF.Functions.ILike(x.NOTARIS_NAME, $"%{search}%")) ||
+                        (x.NO_REGISTRASI != null && EF.Functions.ILike(x.NO_REGISTRASI, $"%{search}%")) ||
+                        (x.NO_VOUCHER != null && EF.Functions.ILike(x.NO_VOUCHER, $"%{search}%")) ||
+                        (x.NO_PEMBIAYAAN != null && EF.Functions.ILike(x.NO_PEMBIAYAAN, $"%{search}%")) ||
+                        (x.NO_SERTIFIKAT != null && EF.Functions.ILike(x.NO_SERTIFIKAT, $"%{search}%")) ||
+                        (x.NOMOR_AKTA != null && EF.Functions.ILike(x.NOMOR_AKTA, $"%{search}%")) ||
+                        (x.ID_PEMBERIFIDUSIA != null && EF.Functions.ILike(x.ID_PEMBERIFIDUSIA, $"%{search}%")) ||
+                        (x.NPWP_PEMBERIFIDUSIA != null && EF.Functions.ILike(x.NPWP_PEMBERIFIDUSIA, $"%{search}%")) ||
+                        (x.NAMA_PEMBERIFIDUSIA != null && EF.Functions.ILike(x.NAMA_PEMBERIFIDUSIA, $"%{search}%")) ||
+                        (x.NAMA_PASANGAN != null && EF.Functions.ILike(x.NAMA_PASANGAN, $"%{search}%")) ||
+                        (x.NAMA_DEBITUR != null && EF.Functions.ILike(x.NAMA_DEBITUR, $"%{search}%")) ||
+                        (x.NOMOR_KONTRAK != null && EF.Functions.ILike(x.NOMOR_KONTRAK, $"%{search}%")) ||
+                        (x.JENIS_OBJECT != null && EF.Functions.ILike(x.JENIS_OBJECT, $"%{search}%")) ||
+                        (x.NOMOR_RANGKA != null && EF.Functions.ILike(x.NOMOR_RANGKA, $"%{search}%")) ||
+                        (x.NOMOR_MESIN != null && EF.Functions.ILike(x.NOMOR_MESIN, $"%{search}%")) ||
+                        (x.NOMOR_POLISI != null && EF.Functions.ILike(x.NOMOR_POLISI, $"%{search}%")) ||
+                        (x.NOMOR_BPKB != null && EF.Functions.ILike(x.NOMOR_BPKB, $"%{search}%")) ||
+                        (x.NAMA_KWITANSI != null && EF.Functions.ILike(x.NAMA_KWITANSI, $"%{search}%"))
+                    );
+
+                    if (DateTime.TryParseExact(search, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate))
+                    {
+                        var ds = parsedDate.Date;
+                        var de = ds.AddDays(1);
+                        query = query.Where(x =>
+                                (x.INSERT_DATE >= ds && x.INSERT_DATE < de) ||
+                                (x.TANGGAL_AKTA.HasValue && x.TANGGAL_AKTA >= ds && x.TANGGAL_AKTA < de) ||
+                                (x.TANGGAL_ORDER.HasValue && x.TANGGAL_ORDER >= ds && x.TANGGAL_ORDER < de) ||
+                                (x.TANGGAL_KONTRAK.HasValue && x.TANGGAL_KONTRAK >= ds && x.TANGGAL_KONTRAK < de) ||
+                                (x.TGL_SERTIFIKAT.HasValue && x.TGL_SERTIFIKAT >= ds && x.TGL_SERTIFIKAT < de)
+                        );
+                    }
+                }
+            }
+
+            // ===============================
+            // ORDER + LIMIT
+            // ===============================
+
+            // Pagination and execution
+            var total = await query.CountAsync();
+            var dataList = await query
+                .OrderBy(x => x.ID)
+                .Skip(Param.StartRecord)
+                .Take(Param.PageSize)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+            return new ResponseModel(ResponseCode.OK, "Success", total, dataList);
+        }
+
+        public async Task<ResponseModel> GetForMinuta_Keyset(Principal UserCurrent, ParamData Param, CancellationToken cancellationToken = default)
+        {
+            var startDate = Param.InsertDate.ToDateTime(TimeOnly.MinValue);
+            var endDate = startDate.AddDays(1);
+            IQueryable<DataModels> query = from d in _dbContext.Documents.AsNoTracking()
+                                           join p in _dbContext.Customers.AsNoTracking() on new { d.CUSTOMER_CODE, d.CLIENT_CODE } equals new { p.CUSTOMER_CODE, p.CLIENT_CODE }
+                                           join c in _dbContext.Clients.AsNoTracking() on d.CLIENT_CODE equals c.CLIENT_CODE
+                                           join t in _dbContext.Notaris.AsNoTracking() on new { d.NOTARIS_CODE, d.CLIENT_CODE } equals new { t.NOTARIS_CODE, t.CLIENT_CODE } into ntrsDefault
+                                           from t in ntrsDefault.DefaultIfEmpty()
+                                           join b in _dbContext.Branches.AsNoTracking() on d.BRANCH_CODE equals b.BRANCH_CODE into bcDefault
+                                           from b in bcDefault.DefaultIfEmpty()
+                                           where
+                                             !d.DELETED_STATUS &&
+                                             d.IMPORT_STATUS &&
+                                             p.ISACTIVE &&
+                                             c.ISACTIVE &&
+                                             (
+                                               (d.INSERT_DATE.HasValue && d.INSERT_DATE >= startDate && d.INSERT_DATE < endDate) ||
+                                               (d.IS_DUPLICATE && d.DUPLICATED_DATE.HasValue && d.DUPLICATED_DATE >= startDate && d.DUPLICATED_DATE < endDate)
+                                             )
+                                           select new DataModels
+                                           {
+                                               ID = d.ID,
+                                               CLIENT_CODE = d.CLIENT_CODE,
+                                               CLIENT_NAME = c.CLIENT_NAME,
+                                               CUSTOMER_CODE = d.CUSTOMER_CODE,
+                                               CUSTOMER_NAME = p.CUSTOMER_NAME,
+                                               TYPE_FIDUSIA = d.TYPE_FIDUSIA,
+                                               BRANCH_CODE = d.BRANCH_CODE,
+                                               BRANCH_NAME = b.BRANCH_NAME ?? d.BRANCH_CODE,
+                                               NOTARIS_CODE = d.NOTARIS_CODE,
+                                               NOTARIS_NAME = t.NOTARIS_NAME,
+                                               NO_REGISTRASI = d.NO_REGISTRASI,
+                                               NO_VOUCHER = d.NO_VOUCHER,
+                                               NO_PEMBIAYAAN = d.NO_PEMBIAYAAN,
+                                               NO_SERTIFIKAT = d.NO_SERTIFIKAT,
+                                               TGL_SERTIFIKAT = d.TGL_SERTIFIKAT,
+                                               JAM_MINUTA = d.JAM_MINUTA,
+                                               TANGGAL_AKTA = d.TANGGAL_AKTA,
+                                               NOMOR_AKTA = d.NOMOR_AKTA,
+                                               TIPE_PEMBERIFIDUSIA = d.TIPE_PEMBERIFIDUSIA,
+                                               ID_PEMBERIFIDUSIA = d.ID_PEMBERIFIDUSIA,
+                                               NPWP_PEMBERIFIDUSIA = d.NPWP_PEMBERIFIDUSIA,
+                                               NAMA_PEMBERIFIDUSIA = d.NAMA_PEMBERIFIDUSIA,
+                                               JK_PEMBERIFIDUSIA = d.JK_PEMBERIFIDUSIA,
+                                               MARITAL_PEMBERIFIDUSIA = d.MARITAL_PEMBERIFIDUSIA,
+                                               TPTLAHIR_PEMBERIFIDUSIA = d.TPTLAHIR_PEMBERIFIDUSIA,
+                                               TGLLAHIR_PEMBERIFIDUSIA = d.TGLLAHIR_PEMBERIFIDUSIA,
+                                               PEKERJAAN_PEMBERIFIDUSIA = d.PEKERJAAN_PEMBERIFIDUSIA,
+                                               ALAMAT_PEMBERIFIDUSIA = d.ALAMAT_PEMBERIFIDUSIA,
+                                               RT_PEMBERIFIDUSIA = d.RT_PEMBERIFIDUSIA,
+                                               RW_PEMBERIFIDUSIA = d.RW_PEMBERIFIDUSIA,
+                                               KELURAHAN_PEMBERIFIDUSIA = d.KELURAHAN_PEMBERIFIDUSIA,
+                                               KECAMATAN_PEMBERIFIDUSIA = d.KECAMATAN_PEMBERIFIDUSIA,
+                                               KABUPATEN_PEMBERIFIDUSIA = d.KABUPATEN_PEMBERIFIDUSIA,
+                                               PROVINSI_PEMBERIFIDUSIA = d.PROVINSI_PEMBERIFIDUSIA,
+                                               POS_PEMBERIFIDUSIA = d.POS_PEMBERIFIDUSIA,
+                                               HP_PEMBERIFIDUSIA = d.HP_PEMBERIFIDUSIA,
+                                               ID_PASANGAN = d.ID_PASANGAN,
+                                               NAMA_PASANGAN = d.NAMA_PASANGAN,
+                                               JK_PASANGAN = d.JK_PASANGAN,
+                                               MARITAL_PASANGAN = d.MARITAL_PASANGAN,
+                                               TPTLAHIR_PASANGAN = d.TPTLAHIR_PASANGAN,
+                                               TGLLAHIR_PASANGAN = d.TGLLAHIR_PASANGAN,
+                                               ID_DEBITUR = d.ID_DEBITUR,
+                                               NAMA_DEBITUR = d.NAMA_DEBITUR,
+                                               JK_DEBITUR = d.JK_DEBITUR,
+                                               MARITAL_DEBITUR = d.MARITAL_DEBITUR,
+                                               TPTLAHIR_DEBITUR = d.TPTLAHIR_DEBITUR,
+                                               TGLLAHIR_DEBITUR = d.TGLLAHIR_DEBITUR,
+                                               ALAMAT_DEBITUR = d.ALAMAT_DEBITUR,
+                                               RT_DEBITUR = d.RT_DEBITUR,
+                                               RW_DEBITUR = d.RW_DEBITUR,
+                                               KELURAHAN_DEBITUR = d.KELURAHAN_DEBITUR,
+                                               KECAMATAN_DEBITUR = d.KECAMATAN_DEBITUR,
+                                               KABUPATEN_DEBITUR = d.KABUPATEN_DEBITUR,
+                                               PROVINSI_DEBITUR = d.PROVINSI_DEBITUR,
+                                               POS_DEBITUR = d.POS_DEBITUR,
+                                               HP_DEBITUR = d.HP_DEBITUR,
+                                               TANGGAL_ORDER = d.TANGGAL_ORDER,
+                                               TANGGAL_KONTRAK = d.TANGGAL_KONTRAK,
+                                               NOMOR_KONTRAK = d.NOMOR_KONTRAK,
+                                               HUTANG_POKOK = d.HUTANG_POKOK,
+                                               NILAI_JAMINAN = d.NILAI_JAMINAN,
+                                               NILAI_BARANG = d.NILAI_BARANG,
+                                               CATEGORY_OBJECT = d.CATEGORY_OBJECT,
+                                               JENIS_OBJECT = d.JENIS_OBJECT,
+                                               MODEL = d.MODEL,
+                                               MERK = d.MERK,
+                                               TIPE = d.TIPE,
+                                               TAHUN = d.TAHUN,
+                                               WARNA = d.WARNA,
+                                               NOMOR_RANGKA = d.NOMOR_RANGKA,
+                                               NOMOR_MESIN = d.NOMOR_MESIN,
+                                               NOMOR_POLISI = d.NOMOR_POLISI,
+                                               NOMOR_BPKB = d.NOMOR_BPKB,
+                                               NAMA_BPKB = d.NAMA_BPKB,
+                                               PEMILIK_BPKB = d.PEMILIK_BPKB,
+                                               TENOR = d.TENOR,
+                                               TANGGAL_AWAL_TENOR = d.TANGGAL_AWAL_TENOR,
+                                               TANGGAL_AKHIR_TENOR = d.TANGGAL_AKHIR_TENOR,
+                                               TYPE_PRODUK = d.TYPE_PRODUK,
+                                               WAY_OF_FINANCING = d.WAY_OF_FINANCING,
+                                               NAMA_KWITANSI = d.NAMA_KWITANSI,
+                                               INSERT_DATE = d.INSERT_DATE,
+                                               AHU_BY = d.AHU_BY,
+                                               AHU_DATE = d.AHU_DATE,
+                                               AHU_STATUS = d.AHU_STATUS,
+                                               USER_BY = d.USER_BY,
+                                               CERTIFICATE_BY = d.CERTIFICATE_BY,
+                                               CERTIFICATE_DATE = d.CERTIFICATE_DATE,
+                                               CERTIFICATE_STATUS = d.CERTIFICATE_STATUS,
+                                               CREATED_BY = d.CREATED_BY,
+                                               CREATED_DATE = d.CREATED_DATE,
+                                               MODIFIED_BY = d.MODIFIED_BY,
+                                               MODIFIED_DATE = d.MODIFIED_DATE,
+                                               DELETED_STATUS = d.DELETED_STATUS,
+                                               DELETED_DATE = d.DELETED_DATE,
+                                               DELETED_BY = d.DELETED_BY,
+                                               MESSAGES = d.MESSAGES,
+                                               IS_DUPLICATE = d.IS_DUPLICATE,
+                                               DUPLICATED_DATE = d.DUPLICATED_DATE,
+
+                                               TIPE_CUSTOMER = p.TIPE,
+                                               SUB_TIPE_CUSTOMER = p.SUB_TIPE,
+                                               TIPE_NAME_CUSTOMER = p.TIPE_NAME,
+                                               JENIS_CUSTOMER = p.JENIS,
+                                               NPWP_CUSTOMER = p.NPWP,
+                                               NIK_CUSTOMER = p.NIK,
+                                               SK_CUSTOMER = p.SK,
+                                               NEGARA_ASAL_CUSTOMER = p.NEGARA_ASAL,
+                                               TELP_CUSTOMER = p.TELP,
+                                               EMAIL_CUSTOMER = p.EMAIL,
+                                               KANTOR_CABANG_CUSTOMER = p.KANTOR_CABANG,
+                                               ALAMAT_CUSTOMER = p.ALAMAT,
+                                               RT_CUSTOMER = p.RT,
+                                               RW_CUSTOMER = p.RW,
+                                               PROVINSI_CUSTOMER = p.PROVINSI,
+                                               KOTA_CUSTOMER = p.KOTA,
+                                               KECAMATAN_CUSTOMER = p.KECAMATAN,
+                                               KELURAHAN_CUSTOMER = p.KELURAHAN,
+                                               POS_CUSTOMER = p.POS
+                                           };
+
+            // ===============================
+            // KEYSET CONDITION
+            // ===============================
+            //if (Param.StartRecord > 0)
+            //{
+            //    query = query.Where(x => x.ID > Param.StartRecord);
+            //}
+
+            // ===============================
+            // User Filter
+            // ===============================
+            if (UserCurrent.UserType == ConstantaData.INTERNAL)
+            {
+                query = query.Where(x => x.CLIENT_CODE == UserCurrent.ClientCode);
+            }
+
+            if (!string.IsNullOrEmpty(Param.CustomerCode))
+            {
+                query = query.Where(x => x.CUSTOMER_CODE == Param.CustomerCode);
+            }
+
+
+            // ===============================
+            // Search (PostgreSQL Friendly)
+            // ===============================
+            if (!string.IsNullOrEmpty(Param.ParamSearch))
+            {
+                var search = Param.ParamSearch.Trim();
+                if (bool.TryParse(search, out bool ahuStatus))
+                {
+                    query = query.Where(x => x.AHU_STATUS == ahuStatus);
+                }
+                else
+                {
+                    query = query.Where(x =>
+                        (x.CLIENT_CODE != null && EF.Functions.ILike(x.CLIENT_CODE, $"%{search}%")) ||
+                        (x.CLIENT_NAME != null && EF.Functions.ILike(x.CLIENT_NAME, $"%{search}%")) ||
+                        (x.CUSTOMER_CODE != null && EF.Functions.ILike(x.CUSTOMER_CODE, $"%{search}%")) ||
+                        (x.CUSTOMER_NAME != null && EF.Functions.ILike(x.CUSTOMER_NAME, $"%{search}%")) ||
+                        (x.BRANCH_CODE != null && EF.Functions.ILike(x.BRANCH_CODE, $"%{search}%")) ||
+                        (x.BRANCH_NAME != null && EF.Functions.ILike(x.BRANCH_NAME, $"%{search}%")) ||
+                        (x.NOTARIS_CODE != null && EF.Functions.ILike(x.NOTARIS_CODE, $"%{search}%")) ||
+                        (x.NOTARIS_NAME != null && EF.Functions.ILike(x.NOTARIS_NAME, $"%{search}%")) ||
+                        //(x.NO_REGISTRASI != null && EF.Functions.ILike(x.NO_REGISTRASI, $"%{search}%")) ||
+                        //(x.NO_VOUCHER != null && EF.Functions.ILike(x.NO_VOUCHER, $"%{search}%")) ||
+                        //(x.NO_PEMBIAYAAN != null && EF.Functions.ILike(x.NO_PEMBIAYAAN, $"%{search}%")) ||
+                        //(x.NO_SERTIFIKAT != null && EF.Functions.ILike(x.NO_SERTIFIKAT, $"%{search}%")) ||
+                        (x.NOMOR_AKTA != null && EF.Functions.ILike(x.NOMOR_AKTA, $"%{search}%")) ||
+                        (x.ID_PEMBERIFIDUSIA != null && EF.Functions.ILike(x.ID_PEMBERIFIDUSIA, $"%{search}%")) ||
+                        (x.NPWP_PEMBERIFIDUSIA != null && EF.Functions.ILike(x.NPWP_PEMBERIFIDUSIA, $"%{search}%")) ||
+                        (x.NAMA_PEMBERIFIDUSIA != null && EF.Functions.ILike(x.NAMA_PEMBERIFIDUSIA, $"%{search}%")) ||
+                        (x.NAMA_PASANGAN != null && EF.Functions.ILike(x.NAMA_PASANGAN, $"%{search}%")) ||
+                        (x.NAMA_DEBITUR != null && EF.Functions.ILike(x.NAMA_DEBITUR, $"%{search}%")) ||
+                        (x.NOMOR_KONTRAK != null && EF.Functions.ILike(x.NOMOR_KONTRAK, $"%{search}%")) ||
+                        (x.JENIS_OBJECT != null && EF.Functions.ILike(x.JENIS_OBJECT, $"%{search}%")) ||
+                        (x.NOMOR_RANGKA != null && EF.Functions.ILike(x.NOMOR_RANGKA, $"%{search}%")) ||
+                        (x.NOMOR_MESIN != null && EF.Functions.ILike(x.NOMOR_MESIN, $"%{search}%")) ||
+                        (x.NOMOR_POLISI != null && EF.Functions.ILike(x.NOMOR_POLISI, $"%{search}%")) ||
+                        (x.NOMOR_BPKB != null && EF.Functions.ILike(x.NOMOR_BPKB, $"%{search}%")) ||
+                        (x.NAMA_KWITANSI != null && EF.Functions.ILike(x.NAMA_KWITANSI, $"%{search}%"))
+                    );
+
+                    if (DateTime.TryParseExact(search, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate))
+                    {
+                        var ds = parsedDate.Date;
+                        var de = ds.AddDays(1);
+                        query = query.Where(x =>
+                                (x.INSERT_DATE >= ds && x.INSERT_DATE < de) ||
+                                (x.TANGGAL_AKTA.HasValue && x.TANGGAL_AKTA >= ds && x.TANGGAL_AKTA < de) ||
+                                (x.TANGGAL_ORDER.HasValue && x.TANGGAL_ORDER >= ds && x.TANGGAL_ORDER < de) ||
+                                (x.TANGGAL_KONTRAK.HasValue && x.TANGGAL_KONTRAK >= ds && x.TANGGAL_KONTRAK < de) ||
+                                (x.TGL_SERTIFIKAT.HasValue && x.TGL_SERTIFIKAT >= ds && x.TGL_SERTIFIKAT < de)
+                        );
+                    }
+                }
+            }
+
+            // ===============================
+            // ORDER + LIMIT
+            // ===============================
+
+            // Pagination and execution
+            var total = await query.CountAsync();
+            var dataList = await query
+                .OrderBy(x => x.ID)
+                .Skip(Param.StartRecord)
+                .Take(Param.PageSize)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+            return new ResponseModel(ResponseCode.OK, "Success", total, dataList);
+        }
+
+
+        public async Task<ResponseModel> GetForHistoryCertificates_Keyset(Principal UserCurrent, ParamData Param, CancellationToken cancellationToken = default)
+        {
+            var startDate = Param.InsertDate.ToDateTime(TimeOnly.MinValue);
+            var endDate = startDate.AddDays(1);
+            IQueryable<HISTORY_CERTIFICATE> query = from c in _dbContext.HistoriesCertificates.AsNoTracking()
+                                                    where (c.CREATED_DATE.HasValue && c.CREATED_DATE >= startDate && c.CREATED_DATE < endDate) 
+                                                    select c;
+
+            // ===============================
+            // KEYSET CONDITION
+            // ===============================
+            //if (Param.StartRecord > 0)
+            //{
+            //    query = query.Where(x => x.ID > Param.StartRecord);
+            //}
+
+            // ===============================
+            // User Filter
+            // ===============================
+            if (UserCurrent.UserType == ConstantaData.INTERNAL)
+            {
+                query = query.Where(x => x.CLIENT_CODE == UserCurrent.ClientCode);
+            }
+
+            if (!string.IsNullOrEmpty(Param.CustomerCode))
+            {
+                query = query.Where(x => x.CUSTOMER_CODE == Param.CustomerCode);
+            }
+
+
+            // ===============================
+            // Search (PostgreSQL Friendly)
+            // ===============================
+            if (!string.IsNullOrEmpty(Param.ParamSearch))
+            {
+                var search = Param.ParamSearch.Trim();
+                if (bool.TryParse(search, out bool sts))
+                {
+                    query = query.Where(x => (x.ISMATCH == sts) || x.STATUS_CERTIFICATE == sts);
+                }
+                else
+                {
+                    query = query.Where(x =>
+                        (x.CLIENT_CODE != null && EF.Functions.ILike(x.CLIENT_CODE, $"%{search}%")) ||
+                        (x.CUSTOMER_CODE != null && EF.Functions.ILike(x.CUSTOMER_CODE, $"%{search}%")) ||
+                        (x.NO_REGISTRASI != null && EF.Functions.ILike(x.NO_REGISTRASI, $"%{search}%")) ||
+                        (x.NO_VOUCHER != null && EF.Functions.ILike(x.NO_VOUCHER, $"%{search}%")) ||
+                        (x.NO_PEMBIAYAAN != null && EF.Functions.ILike(x.NO_PEMBIAYAAN, $"%{search}%")) ||
+                        (x.NO_SERTIFIKAT != null && EF.Functions.ILike(x.NO_SERTIFIKAT, $"%{search}%")) ||
+                        (x.NOMOR_AKTA != null && EF.Functions.ILike(x.NOMOR_AKTA, $"%{search}%")) ||
+                        (x.NOTARIS_CODE != null && EF.Functions.ILike(x.NOTARIS_CODE, $"%{search}%")) ||
+                        (x.NOTARIS_NAME != null && EF.Functions.ILike(x.NOTARIS_NAME, $"%{search}%")) ||
+                        (x.NPWP_PEMBERIFIDUSIA != null && EF.Functions.ILike(x.NPWP_PEMBERIFIDUSIA, $"%{search}%")) ||
+                        (x.NAMA_PEMBERIFIDUSIA != null && EF.Functions.ILike(x.NAMA_PEMBERIFIDUSIA, $"%{search}%")) ||
+                        (x.NAMA_PENERIMAFIDUSIA != null && EF.Functions.ILike(x.NAMA_PENERIMAFIDUSIA, $"%{search}%")) ||
+                        (x.NPWP_PENERIMAFIDUSIA != null && EF.Functions.ILike(x.NPWP_PENERIMAFIDUSIA, $"%{search}%")) ||
+                        (x.CODE_PENERIMAFIDUSIA != null && EF.Functions.ILike(x.CODE_PENERIMAFIDUSIA, $"%{search}%")) ||
+                        (x.WILAYAH != null && EF.Functions.ILike(x.WILAYAH, $"%{search}%")) ||
+                        (x.BRANCH_CODE != null && EF.Functions.ILike(x.BRANCH_CODE, $"%{search}%")) ||
+                        (x.BRANCH_NAME != null && EF.Functions.ILike(x.BRANCH_NAME, $"%{search}%")) ||
+                        (x.FILENAME_CERTIFICATE != null && EF.Functions.ILike(x.FILENAME_CERTIFICATE, $"%{search}%")) 
+                    );
+
+                    if (DateTime.TryParseExact(search, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDate))
+                    {
+                        var ds = parsedDate.Date;
+                        var de = ds.AddDays(1);
+                        query = query.Where(x =>
+                                (x.TANGGAL_AKTA.HasValue && x.TANGGAL_AKTA >= ds && x.TANGGAL_AKTA < de) ||
+                                (x.WAKTU_DAFTAR.HasValue && x.WAKTU_DAFTAR >= ds && x.WAKTU_DAFTAR < de) 
+                        );
+                    }
+                }
+            }
+
+            // ===============================
+            // ORDER + LIMIT
+            // ===============================
+
+            // Pagination and execution
+            var total = await query.CountAsync();
+            var dataList = await query
+                .OrderBy(x => x.ID)
+                .Skip(Param.StartRecord)
+                .Take(Param.PageSize)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+            return new ResponseModel(ResponseCode.OK, "Success", total, dataList);
+        }
+
+
+
+        public async Task<ResponseModel> GetForAHU(Principal UserCurrent, ParamData Param, CancellationToken cancellationToken = default)
+        {
+            //var insertDateUtc = DateTime.SpecifyKind(Param.InsertDate.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc);
             var query = (
                 from d in _dbContext.Documents
                 join p in _dbContext.Customers on new { d.CUSTOMER_CODE, d.CLIENT_CODE }  equals  new { p.CUSTOMER_CODE, p.CLIENT_CODE }
@@ -30,12 +863,12 @@ namespace API.Services
                 from t in ntrsDefault.DefaultIfEmpty()
                 join b in _dbContext.Branches on d.BRANCH_CODE equals b.BRANCH_CODE into bcDefault
                 from b in bcDefault.DefaultIfEmpty()
-                where !d.DELETED_STATUS
+                where !d.DELETED_STATUS && d.IMPORT_STATUS
                     && d.INSERT_DATE.HasValue
                     //&& d.INSERT_DATE!.Value.Date == insertDateUtc.Date
                     && p.ISACTIVE && c.ISACTIVE && n.ISACTIVE
-                    && (d.INSERT_DATE!.Value.Date == param.InsertDate.ToDateTime(TimeOnly.MinValue).Date ||
-                       (d.IS_DUPLICATE && d.DUPLICATED_DATE.HasValue && d.DUPLICATED_DATE!.Value.Date == param.InsertDate.ToDateTime(TimeOnly.MinValue).Date))
+                    && (d.INSERT_DATE!.Value.Date == Param.InsertDate.ToDateTime(TimeOnly.MinValue).Date ||
+                       (d.IS_DUPLICATE && d.DUPLICATED_DATE.HasValue && d.DUPLICATED_DATE!.Value.Date == Param.InsertDate.ToDateTime(TimeOnly.MinValue).Date))
 
                 select new DataModels
                     {
@@ -162,21 +995,21 @@ namespace API.Services
                     }).AsQueryable();
 
             // Filter by user type
-            if (currentUser.UserType == ConstantaData.INTERNAL)
+            if (UserCurrent.UserType == ConstantaData.INTERNAL)
             {
-                query = query.Where(x => x.CLIENT_CODE == currentUser.ClientCode);
+                query = query.Where(x => x.CLIENT_CODE == UserCurrent.ClientCode);
             }
 
             // Filter by customer code
-            if (!string.IsNullOrEmpty(param.CustomerCode))
+            if (!string.IsNullOrEmpty(Param.CustomerCode))
             {
-                query = query.Where(x => x.CUSTOMER_CODE == param.CustomerCode);
+                query = query.Where(x => x.CUSTOMER_CODE == Param.CustomerCode);
             }
 
             // Search
-            if (!string.IsNullOrEmpty(param.ParamSearch))
+            if (!string.IsNullOrEmpty(Param.ParamSearch))
             {
-                string searchTerm = param.ParamSearch;
+                string searchTerm = Param.ParamSearch;
                 if (searchTerm.ToLower() == "true" || searchTerm.ToLower() == "false")
                 {
                     bool ahuStatus = searchTerm == "true";
@@ -283,13 +1116,13 @@ namespace API.Services
             }
 
             // Sorting
-            if (!String.IsNullOrEmpty(param.SortBy) && !String.IsNullOrEmpty(param.SortValue))
+            if (!String.IsNullOrEmpty(Param.SortBy) && !String.IsNullOrEmpty(Param.SortValue))
             {
-                var Sort = param.SortBy;
-                var sortProperty = typeof(DataModels).GetProperty(param.SortBy);
+                var Sort = Param.SortBy;
+                var sortProperty = typeof(DataModels).GetProperty(Param.SortBy);
                 if (sortProperty != null)
                 {
-                    if (param.SortValue == "ASC")
+                    if (Param.SortValue == "ASC")
                     {
                         query = query.OrderBy(d => sortProperty.GetValue(d));
                     }
@@ -309,17 +1142,16 @@ namespace API.Services
             // Pagination and execution
             var total = await query.CountAsync();
             var dataList = await query
-                .Skip(param.StartTake)
-                .Take(param.PageSize)
+                .Skip(Param.StartRecord)
+                .Take(Param.PageSize)
                 .AsNoTracking()
                 .ToListAsync();
             var result = new ResponseModel(ResponseCode.OK, "Success", total, dataList);
             return result;
             
         }
-    
-    
-        public async Task<ResponseModel> GetForCertificate(Principal currentUser, ParamData param)
+        
+        public async Task<ResponseModel> GetForCertificate(Principal UserCurrent, ParamData Param, CancellationToken cancellationToken = default)
         {
             var query = (
                from d in _dbContext.Documents
@@ -330,12 +1162,13 @@ namespace API.Services
                from t in ntrsDefault.DefaultIfEmpty()
                join b in _dbContext.Branches on d.BRANCH_CODE equals b.BRANCH_CODE into bcDefault
                from b in bcDefault.DefaultIfEmpty()
-               where !d.DELETED_STATUS
+               where !d.DELETED_STATUS 
                    && d.AHU_STATUS
+                   && d.IMPORT_STATUS
                    && d.INSERT_DATE.HasValue
                    && p.ISACTIVE && c.ISACTIVE && n.ISACTIVE
-                   && (d.INSERT_DATE!.Value.Date == param.InsertDate.ToDateTime(TimeOnly.MinValue).Date ||
-                       (d.IS_DUPLICATE && d.DUPLICATED_DATE.HasValue && d.DUPLICATED_DATE!.Value.Date == param.InsertDate.ToDateTime(TimeOnly.MinValue).Date))
+                   && (d.INSERT_DATE!.Value.Date == Param.InsertDate.ToDateTime(TimeOnly.MinValue).Date ||
+                       (d.IS_DUPLICATE && d.DUPLICATED_DATE.HasValue && d.DUPLICATED_DATE!.Value.Date == Param.InsertDate.ToDateTime(TimeOnly.MinValue).Date))
                select new DataModels
                 {
                     ID = d.ID,
@@ -461,21 +1294,21 @@ namespace API.Services
 
                 }).AsQueryable();
             // Filter by user type
-            if (currentUser.UserType == ConstantaData.INTERNAL)
+            if (UserCurrent.UserType == ConstantaData.INTERNAL)
             {
-                query = query.Where(x => x.CLIENT_CODE == currentUser.ClientCode);
+                query = query.Where(x => x.CLIENT_CODE == UserCurrent.ClientCode);
             }
 
             // Filter by customer code
-            if (!string.IsNullOrEmpty(param.CustomerCode))
+            if (!string.IsNullOrEmpty(Param.CustomerCode))
             {
-                query = query.Where(x => x.CUSTOMER_CODE == param.CustomerCode);
+                query = query.Where(x => x.CUSTOMER_CODE == Param.CustomerCode);
             }
 
             // Search
-            if (!string.IsNullOrEmpty(param.ParamSearch))
+            if (!string.IsNullOrEmpty(Param.ParamSearch))
             {
-                string searchTerm = param.ParamSearch;
+                string searchTerm = Param.ParamSearch;
                 if (searchTerm.ToLower() == "true" || searchTerm.ToLower() == "false")
                 {
                     bool cerStatus = searchTerm == "true";
@@ -582,13 +1415,13 @@ namespace API.Services
             }
 
             // Sorting
-            if (!String.IsNullOrEmpty(param.SortBy) && !String.IsNullOrEmpty(param.SortValue))
+            if (!String.IsNullOrEmpty(Param.SortBy) && !String.IsNullOrEmpty(Param.SortValue))
             {
-                var Sort = param.SortBy;
-                var sortProperty = typeof(DataModels).GetProperty(param.SortBy);
+                var Sort = Param.SortBy;
+                var sortProperty = typeof(DataModels).GetProperty(Param.SortBy);
                 if (sortProperty != null)
                 {
-                    if (param.SortValue == "ASC")
+                    if (Param.SortValue == "ASC")
                     {
                         query = query.OrderBy(d => sortProperty.GetValue(d));
                     }
@@ -608,16 +1441,15 @@ namespace API.Services
             // Pagination and execution
             var total = await query.CountAsync();
             var dataList = await query
-                .Skip(param.StartTake)
-                .Take(param.PageSize)
+                .Skip(Param.StartRecord)
+                .Take(Param.PageSize)
                 .AsNoTracking()
                 .ToListAsync();
             var result = new ResponseModel(ResponseCode.OK, "Success", total, dataList);
             return result;
         }
 
-
-        public async Task<ResponseModel> GetForMinuta(Principal currentUser, ParamData param)
+        public async Task<ResponseModel> GetForMinuta(Principal UserCurrent, ParamData Param, CancellationToken cancellationToken = default)
         {
             var query = (
                 from d in _dbContext.Documents
@@ -629,10 +1461,11 @@ namespace API.Services
                 join b in _dbContext.Branches on d.BRANCH_CODE equals b.BRANCH_CODE into bcDefault
                 from b in bcDefault.DefaultIfEmpty()
                 where !d.DELETED_STATUS
+                    && d.IMPORT_STATUS
                     && d.INSERT_DATE.HasValue
                     && p.ISACTIVE && c.ISACTIVE && n.ISACTIVE
-                    && (d.INSERT_DATE!.Value.Date == param.InsertDate.ToDateTime(TimeOnly.MinValue).Date ||
-                       (d.IS_DUPLICATE && d.DUPLICATED_DATE.HasValue && d.DUPLICATED_DATE!.Value.Date == param.InsertDate.ToDateTime(TimeOnly.MinValue).Date))
+                    && (d.INSERT_DATE!.Value.Date == Param.InsertDate.ToDateTime(TimeOnly.MinValue).Date ||
+                       (d.IS_DUPLICATE && d.DUPLICATED_DATE.HasValue && d.DUPLICATED_DATE!.Value.Date == Param.InsertDate.ToDateTime(TimeOnly.MinValue).Date))
 
                 select new DataModels
                 {
@@ -759,21 +1592,21 @@ namespace API.Services
                 }).AsQueryable();
 
             // Filter by user type
-            if (currentUser.UserType == ConstantaData.INTERNAL)
+            if (UserCurrent.UserType == ConstantaData.INTERNAL)
             {
-                query = query.Where(x => x.CLIENT_CODE == currentUser.ClientCode);
+                query = query.Where(x => x.CLIENT_CODE == UserCurrent.ClientCode);
             }
 
             // Filter by customer code
-            if (!string.IsNullOrEmpty(param.CustomerCode))
+            if (!string.IsNullOrEmpty(Param.CustomerCode))
             {
-                query = query.Where(x => x.CUSTOMER_CODE == param.CustomerCode);
+                query = query.Where(x => x.CUSTOMER_CODE == Param.CustomerCode);
             }
 
             // Search
-            if (!string.IsNullOrEmpty(param.ParamSearch))
+            if (!string.IsNullOrEmpty(Param.ParamSearch))
             {
-                string searchTerm = param.ParamSearch;
+                string searchTerm = Param.ParamSearch;
                 if (searchTerm.ToLower() == "true" || searchTerm.ToLower() == "false")
                 {
                     bool ahuStatus = searchTerm == "true";
@@ -880,13 +1713,13 @@ namespace API.Services
             }
 
             // Sorting
-            if (!String.IsNullOrEmpty(param.SortBy) && !String.IsNullOrEmpty(param.SortValue))
+            if (!String.IsNullOrEmpty(Param.SortBy) && !String.IsNullOrEmpty(Param.SortValue))
             {
-                var Sort = param.SortBy;
-                var sortProperty = typeof(DataModels).GetProperty(param.SortBy);
+                var Sort = Param.SortBy;
+                var sortProperty = typeof(DataModels).GetProperty(Param.SortBy);
                 if (sortProperty != null)
                 {
-                    if (param.SortValue == "ASC")
+                    if (Param.SortValue == "ASC")
                     {
                         query = query.OrderBy(d => sortProperty.GetValue(d));
                     }
@@ -906,8 +1739,8 @@ namespace API.Services
             // Pagination and execution
             var total = await query.CountAsync();
             var dataList = await query
-                .Skip(param.StartTake)
-                .Take(param.PageSize)
+                .Skip(Param.StartRecord)
+                .Take(Param.PageSize)
                 .AsNoTracking()
                 .ToListAsync();
             var result = new ResponseModel(ResponseCode.OK, "Success", total, dataList);

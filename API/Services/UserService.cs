@@ -11,24 +11,24 @@ namespace API.Services
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
 
-        public async Task<List<ApplicationUser>> GetAllUsersAsync()
+        public async Task<IReadOnlyList<ApplicationUser>> GetAllUsersAsync()
         {
             return await _userManager.Users.ToListAsync();
         }
 
-        public async Task<ApplicationUser> GetUserByIdAsync(string userId)
+        public async Task<ApplicationUser> GetUserByIdAsync(string UserId)
         {
-            return await _userManager.FindByIdAsync(userId) ?? new ApplicationUser();
+            return await _userManager.FindByIdAsync(UserId) ?? new ApplicationUser();
         }
 
-        public async Task<IdentityResult> UpdateUserAsync(ApplicationUser user)
+        public async Task<IdentityResult> UpdateUserAsync(ApplicationUser Users)
         {
-            return await _userManager.UpdateAsync(user);
+            return await _userManager.UpdateAsync(Users);
         }
 
-        public async Task<IdentityResult> DeleteUserAsync(ApplicationUser user)
+        public async Task<IdentityResult> DeleteUserAsync(ApplicationUser Users)
         {
-            return await _userManager.DeleteAsync(user);
+            return await _userManager.DeleteAsync(Users);
         }
 
 
