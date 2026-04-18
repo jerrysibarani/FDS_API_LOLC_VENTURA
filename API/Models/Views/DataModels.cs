@@ -125,5 +125,7 @@ namespace API.Models.Views
         public string? MESSAGES { get; set; }
         public bool IS_DUPLICATE { get; set; }
         public DateTime? DUPLICATED_DATE { get; set; }
+        public string? CODE_ALIAS { get; set; }
+        public bool ISBRANCH { get; set; }
     }
 }

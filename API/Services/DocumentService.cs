@@ -197,19 +197,44 @@ namespace API.Services
             try
             {
                 // 1. Ambil batch number (lebih ringkas)
-                int lastBatch = await _dbContext.HistoriesCertificates
-                    .Select(x => (int?)x.BATCH_NUMBER)
-                    .MaxAsync(cancellationToken) ?? 0;
+                int lastBatch = await _dbContext.HistoriesCertificates.Select(x => (int?)x.BATCH_NUMBER).MaxAsync(cancellationToken) ?? 0;
                 int batchNumber = lastBatch + 1;
 
-                // 2. Mapping data awal
+                // 2. Identify unique codes to look up (prevents loading the whole Customer table)
+                var requestedCodes = Param.Select(x => x.CUSTOMER_CODE).Where(c => !string.IsNullOrEmpty(c)).Distinct().ToList();
+
+                // 3. Optimized Lookup: Fetch only needed customers and build a dictionary
+                var customerLookup = await _dbContext.Customers
+                                            .Where(x => x.ISACTIVE && x.CUSTOMER_CODE != null &&
+                                                       (requestedCodes.Contains(x.CUSTOMER_CODE) || requestedCodes.Contains(x.CODE_ALIAS)))
+                                            .AsNoTracking()
+                                            .ToDictionaryAsync(
+                                                x => x.CUSTOMER_CODE!, // The ! tells the compiler this won't be null
+                                                x => x,
+                                                cancellationToken);
+
+                // 4. Map and Process
                 var certificates = _mapper.Map<List<HISTORY_CERTIFICATE>>(Param);
+                var now = DateTime.UtcNow;
                 foreach (var cert in certificates)
                 {
+                    if (!string.IsNullOrEmpty(cert.CUSTOMER_CODE))
+                    {
+                        // Check main code first, then fallback to alias via search if dictionary key isn't a direct hit
+                        var customer = customerLookup.GetValueOrDefault(cert.CUSTOMER_CODE) ?? customerLookup.Values.FirstOrDefault(c => c.CODE_ALIAS == cert.CUSTOMER_CODE);
+
+                        if (customer != null)
+                        {
+                            cert.NAMA_PENERIMAFIDUSIA = customer.CUSTOMER_NAME;
+                            cert.CUSTOMER_CODE = customer.CUSTOMER_CODE;
+                        }
+                    }
+
                     cert.BATCH_NUMBER = batchNumber;
                     cert.CREATED_BY = UserCurrent.Email;
-                    cert.CREATED_DATE = DateTime.UtcNow;
+                    cert.CREATED_DATE = now;
                 }
+
 
                 // Simpan history awal agar memiliki ID
                 await _dbContext.HistoriesCertificates.AddRangeAsync(certificates, cancellationToken);

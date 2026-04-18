@@ -169,8 +169,10 @@ namespace API.Services
                                                   KOTA_CUSTOMER = p.KOTA,
                                                   KECAMATAN_CUSTOMER = p.KECAMATAN,
                                                   KELURAHAN_CUSTOMER = p.KELURAHAN,
-                                                  POS_CUSTOMER = p.POS
-                                              };
+                                                  POS_CUSTOMER = p.POS,
+                                                  ISBRANCH = p.ISBRANCH,
+                                                  CODE_ALIAS = p.CODE_ALIAS
+                                            };
 
             // ===============================
             // KEYSET CONDITION
@@ -427,7 +429,9 @@ namespace API.Services
                                                KOTA_CUSTOMER = p.KOTA,
                                                KECAMATAN_CUSTOMER = p.KECAMATAN,
                                                KELURAHAN_CUSTOMER = p.KELURAHAN,
-                                               POS_CUSTOMER = p.POS
+                                               POS_CUSTOMER = p.POS,
+                                               ISBRANCH = p.ISBRANCH,
+                                               CODE_ALIAS = p.CODE_ALIAS
                                            };
 
             // ===============================
@@ -663,7 +667,9 @@ namespace API.Services
                                                KOTA_CUSTOMER = p.KOTA,
                                                KECAMATAN_CUSTOMER = p.KECAMATAN,
                                                KELURAHAN_CUSTOMER = p.KELURAHAN,
-                                               POS_CUSTOMER = p.POS
+                                               POS_CUSTOMER = p.POS,
+                                               ISBRANCH = p.ISBRANCH,
+                                               CODE_ALIAS = p.CODE_ALIAS
                                            };
 
             // ===============================
@@ -991,8 +997,10 @@ namespace API.Services
                         KOTA_CUSTOMER = p.KOTA,
                         KECAMATAN_CUSTOMER = p.KECAMATAN,
                         KELURAHAN_CUSTOMER = p.KELURAHAN,
-                        POS_CUSTOMER = p.POS
-                    }).AsQueryable();
+                        POS_CUSTOMER = p.POS,
+                        ISBRANCH = p.ISBRANCH,
+                        CODE_ALIAS = p.CODE_ALIAS
+                }).AsQueryable();
 
             // Filter by user type
             if (UserCurrent.UserType == ConstantaData.INTERNAL)
@@ -1291,8 +1299,10 @@ namespace API.Services
                     KECAMATAN_CUSTOMER = p.KECAMATAN,
                     KELURAHAN_CUSTOMER = p.KELURAHAN,
                     POS_CUSTOMER = p.POS,
+                   ISBRANCH = p.ISBRANCH,
+                   CODE_ALIAS = p.CODE_ALIAS
 
-                }).AsQueryable();
+               }).AsQueryable();
             // Filter by user type
             if (UserCurrent.UserType == ConstantaData.INTERNAL)
             {
@@ -1588,7 +1598,9 @@ namespace API.Services
                     KOTA_CUSTOMER = p.KOTA,
                     KECAMATAN_CUSTOMER = p.KECAMATAN,
                     KELURAHAN_CUSTOMER = p.KELURAHAN,
-                    POS_CUSTOMER = p.POS
+                    POS_CUSTOMER = p.POS,
+                    ISBRANCH = p.ISBRANCH,
+                    CODE_ALIAS = p.CODE_ALIAS
                 }).AsQueryable();
 
             // Filter by user type

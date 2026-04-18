@@ -80,7 +80,10 @@ namespace API.Data.Entities
 
         public bool ISACTIVE { get; set; } = true;
 
+        public string? CODE_ALIAS { get; set; }
+        public bool ISBRANCH { get; set; } 
 
         
+
     }
 }
