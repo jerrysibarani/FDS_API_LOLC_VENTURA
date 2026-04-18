@@ -22,14 +22,12 @@ namespace API.Data
         public DbSet<POSTS> Posts { get; set; }
         public DbSet<INVOICE> Invoices { get; set; }
         public DbSet<INVOICE_HISTORY> InvoiceHistories { get; set; }
-
         public DbSet<PNBP> Pnbps { get; set; }
-
         public DbSet<DOCUMENTS> Documents { get; set; }
         public DbSet<DOCUMENTS_CONFIG> DocumentsConfig { get; set; }
         public DbSet<DOCUMENTS_FILE> DocumentsFile { get; set; }
         public DbSet<DOCUMENTS_IMPORT> DocumentsImport { get; set; }
-
+        public DbSet<HISTORY_CERTIFICATE> HistoriesCertificates { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder); // Ensure base method is called

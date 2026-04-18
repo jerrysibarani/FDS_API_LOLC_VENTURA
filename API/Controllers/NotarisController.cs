@@ -23,15 +23,11 @@ namespace API.Controllers
 
 
         [HttpGet]
-        public async Task<ActionResult> Get()
+        public async Task<ActionResult> Get(CancellationToken cancellationToken)
         {
             try
             {
-                if (currentUser.UserType == ConstantaData.EXTERNAL)
-                {
-                    return BadRequest("Not Access");
-                }
-                var result = await _notarisService.GetCodeNotaris(currentUser);
+                var result = await _notarisService.GetCodeNotaris(CurrentUser, cancellationToken);
                 if (result == null)
                 {
                     return NotFound("Data not found");
@@ -48,15 +44,11 @@ namespace API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put(string id)
+        public async Task<IActionResult> Put(string id, CancellationToken cancellationToken)
         {
             try
             {
-                if (currentUser.UserType == ConstantaData.EXTERNAL)
-                {
-                    return BadRequest("Not Access");
-                }
-                bool result = await _notarisService.ChangeStatusNotaris(currentUser, id);
+                bool result = await _notarisService.ChangeStatusNotaris(CurrentUser, id, cancellationToken);
                 if (result)
                 {
                     return Ok(JsonConvert.SerializeObject(new ResponseModel(ResponseCode.OK, "Success", 0, string.Empty), Formatting.Indented));

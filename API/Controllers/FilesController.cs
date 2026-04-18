@@ -19,13 +19,12 @@ namespace API.Controllers
         private readonly IFileService _fileService = fileService;
 
         [HttpPost("Certificate")]
-        public async Task<ActionResult> Certificate([FromBody] ParamFile param)
+        public async Task<ActionResult> Certificate([FromBody] ParamFile param, CancellationToken cancellationToken)
         {
-            if (param == null) return BadRequest("Request data is null.");
-            if (currentUser.UserType == ConstantaData.EXTERNAL) return BadRequest("Not Access");
             try
             {
-                var result = await _fileService.SaveCertificate(currentUser, param);
+                if (param == null) return BadRequest("Request data is null.");
+                var result = await _fileService.SaveCertificate(CurrentUser, param, cancellationToken);
                 if (result)
                 {
                     return Ok(JsonConvert.SerializeObject(new ResponseModel(ResponseCode.OK, "Success", 1, string.Empty), Formatting.Indented));
@@ -42,14 +41,12 @@ namespace API.Controllers
         }
 
         [HttpPost("Minuta")]
-        public async Task<ActionResult> Minuta([FromBody] ParamFile param)
+        public async Task<ActionResult> Minuta([FromBody] ParamFile param, CancellationToken cancellationToken)
         {
-            if (param == null) return BadRequest("Request data is null.");
-            if (currentUser.UserType == ConstantaData.EXTERNAL) return BadRequest("Not Access");
-
             try
             {
-                var result = await _fileService.SaveMinuta(currentUser, param);
+                if (param == null) return BadRequest("Request data is null.");
+                var result = await _fileService.SaveMinuta(CurrentUser, param, cancellationToken);
                 if (result)
                 {
                     return Ok(JsonConvert.SerializeObject(new ResponseModel(ResponseCode.OK, "Success", 1, string.Empty), Formatting.Indented));

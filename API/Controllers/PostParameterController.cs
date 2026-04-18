@@ -1,12 +1,7 @@
-﻿using API.Data;
-using API.Helpers;
-using API.Model;
+﻿using API.Model;
 using API.IServices;
-using API.Models.Views;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 namespace API.Controllers
@@ -21,17 +16,12 @@ namespace API.Controllers
 
         private readonly IPostsService _postsService = postsService;
 
-
         [HttpGet]
-        public async Task<ActionResult> Get()
+        public async Task<ActionResult> Get(CancellationToken cancellationToken)
         {
             try
             {
-                if (currentUser.UserType == ConstantaData.EXTERNAL)
-                {
-                    return BadRequest("Not Access");
-                }
-                var result = await _postsService.GetListPost();
+                var result = await _postsService.GetListPost(cancellationToken);
 
                 if (result == null)
                 {
@@ -50,15 +40,11 @@ namespace API.Controllers
         
         
         [HttpGet("ByGroup")]
-        public async Task<ActionResult> ByGroup(string parameter)
+        public async Task<ActionResult> ByGroup(string parameter, CancellationToken cancellationToken)
         {
             try
             {
-                if (currentUser.UserType == ConstantaData.EXTERNAL)
-                {
-                    return BadRequest("Not Access");
-                }
-                var result = await _postsService.GetListPostByGroup(parameter);
+                var result = await _postsService.GetListPostByGroup(parameter, cancellationToken);
 
                 if (result == null)
                 {
@@ -77,15 +63,11 @@ namespace API.Controllers
 
 
         [HttpGet("ByHeader")]
-        public async Task<ActionResult> ByHeader(string parameter)
+        public async Task<ActionResult> ByHeader(string parameter, CancellationToken cancellationToken)
         {
             try
             {
-                if (currentUser.UserType == ConstantaData.EXTERNAL)
-                {
-                    return BadRequest("Not Access");
-                }
-                var result = await _postsService.GetListPostByHeader(parameter);
+                var result = await _postsService.GetListPostByHeader(parameter, cancellationToken);
 
                 if (result == null)
                 {
@@ -104,15 +86,11 @@ namespace API.Controllers
 
 
         [HttpGet("ByType")]
-        public async Task<ActionResult> ByType(string parameter)
+        public async Task<ActionResult> ByType(string parameter, CancellationToken cancellationToken)
         {
             try
             {
-                if (currentUser.UserType == ConstantaData.EXTERNAL)
-                {
-                    return BadRequest("Not Access");
-                }
-                var result = await _postsService.GetListPostByType(parameter);
+                var result = await _postsService.GetListPostByType(parameter, cancellationToken);
 
                 if (result == null)
                 {

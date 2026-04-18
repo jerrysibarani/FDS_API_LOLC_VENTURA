@@ -4,6 +4,7 @@ using API.Data.Models;
 using API.IServices;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace API.Services
 {
@@ -14,41 +15,41 @@ namespace API.Services
     {
         private readonly AppDbContext _dbContext = dbContext;
 
-        public async Task<List<RolesUserModel>> GetAllRolesUserAsync(string userId)
+        public async Task<List<RolesUserModel>> GetAllRolesUserAsync(string UserId, CancellationToken cancellationToken)
         {
             return await _dbContext.UserRoles
-                .Where(x => x.UserId == userId)
+                .Where(x => x.UserId == UserId)
                 .Select(x => new RolesUserModel
                 {
                     UserId = x.UserId,
                     RoleId = x.RoleId
                 })
-                .AsNoTracking()
-                .ToListAsync();
+            .AsNoTracking()
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<IdentityResult> AssignRoleToUserAsync(string userId, string roleName)
+        public async Task<IdentityResult> AssignRoleToUserAsync(string UserId, string RoleName)
         {
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(UserId);
             if (user is null)
-                return IdentityResult.Failed(new IdentityError { Description = $"User with ID {userId} not found." });
+                return IdentityResult.Failed(new IdentityError { Description = $"User with ID {UserId} not found." });
 
-            return await _userManager.AddToRoleAsync(user, roleName.ToUpper());
+            return await _userManager.AddToRoleAsync(user, RoleName.ToUpper());
         }
 
-        public async Task<bool> DeleteUserRolesAsync(string userId, string roleName)
+        public async Task<bool> DeleteUserRolesAsync(string UserId, string RoleName)
         {
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(UserId);
             if (user is null) return false;
 
-            var result = await _userManager.RemoveFromRoleAsync(user, roleName);
+            var result = await _userManager.RemoveFromRoleAsync(user, RoleName);
             return result.Succeeded;
         }
 
-        public async Task<bool> IsUserInRoleAsync(string userId, string roleName)
+        public async Task<bool> IsUserInRoleAsync(string UserId, string RoleName)
         {
-            var user = await _userManager.FindByIdAsync(userId);
-            return user != null && await _userManager.IsInRoleAsync(user, roleName);
+            var user = await _userManager.FindByIdAsync(UserId);
+            return user != null && await _userManager.IsInRoleAsync(user, RoleName);
         }
     }
 

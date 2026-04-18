@@ -5,11 +5,11 @@ namespace API.Services
 {
     public class ConnectionDB : IConnectionDB
     {
-        public string DecryptionDB(string encryptedConnectionString)
+        public string DecryptionDB(string EncryptedConnectionString)
         {
             try
             {
-                string decryptString = EncrDecrRsa.DecryptionRSA(encryptedConnectionString);
+                string decryptString = EncrDecrRsa.DecryptionRSA(EncryptedConnectionString);
                 return decryptString; // Replace with actual decryption logic
             }
             catch (Exception ex)

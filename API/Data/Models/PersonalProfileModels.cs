@@ -10,7 +10,7 @@
         public string? City { get; set; }
         public string? PhoneNumber { get; set; }
 
-        public bool? IsSuperAdmin { get; set; }
+        public bool IsSuperAdmin { get; set; }
         public string? USER_TYPE { get; set; }
         public string? CUSTOMER_CODE { get; set; }
         public string? CLIENT_CODE { get; set; }

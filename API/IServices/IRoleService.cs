@@ -4,10 +4,10 @@ namespace API.IServices
 {
     public interface IRoleService
     {
-        public Task<IdentityResult> CreateRoleAsync(string roleName);
+        public Task<IdentityResult> CreateRoleAsync(string RoleName);
         public Task<List<string?>> GetAllRolesAsync();
         public Task<List<IdentityRole>> GetIdentityRolesAsync();
-        public Task<bool> DeleteRoleAsync(string roleId);
-        public Task<bool> RoleExistsAsync(string roleName);
+        public Task<bool> DeleteRoleAsync(string RoleId);
+        public Task<bool> RoleExistsAsync(string RoleName);
     }
 }

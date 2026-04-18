@@ -1,12 +1,9 @@
 ﻿using API.Data;
 using API.IServices;
-using API.Models.Views;
 using API.Models;
 using API.Data.Models;
 using API.Helpers;
 using Microsoft.EntityFrameworkCore;
-using API.Model;
-using Newtonsoft.Json;
 
 namespace API.Services
 {
@@ -17,16 +14,15 @@ namespace API.Services
 
         private readonly AppDbContext _dbContext = dbContext;
 
-        public async Task<List<PostValueModels>> GetCodeCustomer(Principal currentUser)
+        public async Task<IReadOnlyList<PostValueModels>> GetCodeCustomer(Principal UserCurrent, CancellationToken cancellationToken = default)
         {
 
             var query = _dbContext.Customers
-                    .AsNoTracking()
                     .Where(c => c.ISACTIVE);
 
-            if (currentUser.UserType == ConstantaData.INTERNAL)
+            if (UserCurrent.UserType == ConstantaData.INTERNAL)
             {
-                query = query.Where(c => c.CLIENT_CODE == currentUser.ClientCode);
+                query = query.Where(c => c.CLIENT_CODE == UserCurrent.ClientCode);
             }
 
             return await query
@@ -35,7 +31,8 @@ namespace API.Services
                     POST_NAME = c.CUSTOMER_NAME,
                     POST_VALUE = c.CUSTOMER_CODE
                 })
-                .ToListAsync();
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
 
         }
     }

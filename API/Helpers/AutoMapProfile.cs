@@ -10,6 +10,7 @@ namespace API.Helpers
         public AutoMapProfile()
         {
             CreateMap<DataModels, DOCUMENTS>();
+            CreateMap<CertificateModel, HISTORY_CERTIFICATE>();
 
 
             //CreateMap<User, UserDto>()
