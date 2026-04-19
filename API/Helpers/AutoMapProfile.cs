@@ -10,7 +10,10 @@ namespace API.Helpers
         public AutoMapProfile()
         {
             CreateMap<DataModels, DOCUMENTS>();
-            CreateMap<CertificateModel, HISTORY_CERTIFICATE>();
+            //CreateMap<CertificateModel, HISTORY_CERTIFICATE>();
+            // Change this in your Profile or Mapping configuration
+            CreateMap<CertificateModel, HISTORY_CERTIFICATE>().ReverseMap();
+
 
 
             //CreateMap<User, UserDto>()

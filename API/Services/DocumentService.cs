@@ -246,8 +246,16 @@ namespace API.Services
                 // Kita filter dlu seminimal mungkin agar tidak menarik seluruh isi database
                 var joinedData = await (from d in _dbContext.Documents
                                         join p in _dbContext.Customers on new { d.CUSTOMER_CODE, d.CLIENT_CODE } equals new { p.CUSTOMER_CODE, p.CLIENT_CODE }
-                                        where !d.DELETED_STATUS && d.AHU_STATUS && d.IMPORT_STATUS && d.INSERT_DATE.HasValue && p.ISACTIVE
-                                        select new { Document = d, CustomerName = p.CUSTOMER_NAME })
+                                        join br in _dbContext.Branches on d.BRANCH_CODE equals br.BRANCH_CODE into bcDefault
+                                        from br in bcDefault.DefaultIfEmpty()
+
+                                        where !d.DELETED_STATUS && d.AHU_STATUS && d.IMPORT_STATUS  && d.INSERT_DATE.HasValue && p.ISACTIVE
+                                        && d.CERTIFICATE_STATUS
+                                        select new {
+                                            Document = d, 
+                                            CustomerName = p.CUSTOMER_NAME,
+                                            BRANCH_NAME = br.BRANCH_CODE == null ? d.BRANCH_CODE : br.BRANCH_NAME,
+                                        })
                                         .AsNoTracking() // Jika hanya untuk matching, gunakan NoTracking
                                         .ToListAsync(cancellationToken);
 
@@ -287,7 +295,8 @@ namespace API.Services
                         _dbContext.HistoriesCertificates.Attach(bt);
                         bt.DOCUMENT_ID = dataDoc.ID;
                         bt.ISMATCH = true;
-
+                        bt.BRANCH_CODE = match.BRANCH_NAME;
+                        bt.BRANCH_NAME = match.BRANCH_NAME;
                         _dbContext.HistoriesCertificates.Update(bt);
                         hasUpdates = true;
                     }
@@ -297,12 +306,16 @@ namespace API.Services
                 {
                     await _dbContext.SaveChangesAsync(cancellationToken);
                     _dbContext.ChangeTracker.Clear();
+                    lsBatch = await _dbContext.HistoriesCertificates.Where(x => x.BATCH_NUMBER == batchNumber).AsNoTracking().ToListAsync(cancellationToken);
                 }
 
-                return new ResponseModel(ResponseCode.OK, "Success", Param.Count, Param);
+                var result = _mapper.Map<List<CertificateModel>>(lsBatch);
+                //return new ResponseModel(ResponseCode.OK, "Success", lsBatch.Count, lsBatch);
+                return new ResponseModel(ResponseCode.OK, "Success", result.Count, result);
             }
             catch (Exception ex)
             {
+                //return new ResponseModel(ResponseCode.OK, "Error"+ex.Message.ToString(), Param.Count, Param);
                 return new ResponseModel(ResponseCode.Error, "Error", 0, ex.Message);
             }
 
