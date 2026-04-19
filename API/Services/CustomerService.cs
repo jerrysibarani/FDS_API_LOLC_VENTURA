@@ -1,8 +1,9 @@
 ﻿using API.Data;
-using API.IServices;
-using API.Models;
+using API.Data.Entities;
 using API.Data.Models;
 using API.Helpers;
+using API.IServices;
+using API.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services
@@ -34,6 +35,19 @@ namespace API.Services
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
+        }
+
+        public async Task<IReadOnlyList<CUSTOMER>> GetDataCustomer(Principal UserCurrent, CancellationToken cancellationToken = default)
+        {
+            var query = _dbContext.Customers
+                    .Where(c => c.ISACTIVE);
+            if (UserCurrent.UserType == ConstantaData.INTERNAL)
+            {
+                query = query.Where(c => c.CLIENT_CODE == UserCurrent.ClientCode);
+            }
+            return await query
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
         }
     }
 }
