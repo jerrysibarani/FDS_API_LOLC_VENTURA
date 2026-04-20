@@ -10,8 +10,8 @@ namespace API.Models.Params
         public DateOnly InsertDate { get; set; }
 
         [Required(ErrorMessage = "Start Record is required")]
-        [Display(Name = "StartRecord")]
-        public int StartRecord { get; set; }
+        [Display(Name = "StartTake")]
+        public int StartTake { get; set; }
 
         [Required(ErrorMessage = "Page Size is required")]
         [Display(Name = "PageSize")]
@@ -31,7 +31,7 @@ namespace API.Models.Params
 
         [Required(ErrorMessage = "Customer Code is required")]
         [Display(Name = "CustomerCode")]
-        public string CustomerCode { get; set; }
+        public string? CustomerCode { get; set; }
 
     }
 }

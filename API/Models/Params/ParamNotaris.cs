@@ -12,6 +12,6 @@ namespace API.Models.Params
 
         [Required(ErrorMessage = "Notaris Code is required")]
         [Display(Name = "Notaris Code")]
-        public string NOTARIS_CODE { get; set; }
+        public string? NOTARIS_CODE { get; set; }
     }
 }

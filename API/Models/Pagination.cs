@@ -15,13 +15,13 @@
 
     public class FilterDescriptor
     {
-        public string Id { get; set; }
-        public string Value { get; set; }
+        public string? Id { get; set; }
+        public string? Value { get; set; }
     }
 
     public class SortDescriptor
     {
-        public string Id { get; set; }
+        public string? Id { get; set; }
         public bool Desc { get; set; }
     }
 

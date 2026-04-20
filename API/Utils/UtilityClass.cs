@@ -9,7 +9,7 @@ namespace API.Utils
         public static string GetContentType(string fileName)
         {
             var provider = new FileExtensionContentTypeProvider();
-            if (!provider.TryGetContentType(fileName, out string contentType))
+            if (!provider.TryGetContentType(fileName, out string? contentType))
             {
                 contentType = "application/octet-stream";
             }

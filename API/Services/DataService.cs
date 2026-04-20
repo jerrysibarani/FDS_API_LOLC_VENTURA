@@ -278,7 +278,7 @@ namespace API.Services
             var total = await query.CountAsync();
             var dataList = await query
                 .OrderBy(x => x.ID)
-                .Skip(Param.StartRecord)
+                .Skip(Param.StartTake)
                 .Take(Param.PageSize)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
@@ -519,7 +519,7 @@ namespace API.Services
             var total = await query.CountAsync();
             var dataList = await query
                 .OrderBy(x => x.ID)
-                .Skip(Param.StartRecord)
+                .Skip(Param.StartTake)
                 .Take(Param.PageSize)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
@@ -757,7 +757,7 @@ namespace API.Services
             var total = await query.CountAsync();
             var dataList = await query
                 .OrderBy(x => x.ID)
-                .Skip(Param.StartRecord)
+                .Skip(Param.StartTake)
                 .Take(Param.PageSize)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
@@ -848,7 +848,7 @@ namespace API.Services
             var total = await query.CountAsync();
             var dataList = await query
                 .OrderBy(x => x.ID)
-                .Skip(Param.StartRecord)
+                .Skip(Param.StartTake)
                 .Take(Param.PageSize)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
@@ -1150,7 +1150,7 @@ namespace API.Services
             // Pagination and execution
             var total = await query.CountAsync();
             var dataList = await query
-                .Skip(Param.StartRecord)
+                .Skip(Param.StartTake)
                 .Take(Param.PageSize)
                 .AsNoTracking()
                 .ToListAsync();
@@ -1451,7 +1451,7 @@ namespace API.Services
             // Pagination and execution
             var total = await query.CountAsync();
             var dataList = await query
-                .Skip(Param.StartRecord)
+                .Skip(Param.StartTake)
                 .Take(Param.PageSize)
                 .AsNoTracking()
                 .ToListAsync();
@@ -1751,7 +1751,7 @@ namespace API.Services
             // Pagination and execution
             var total = await query.CountAsync();
             var dataList = await query
-                .Skip(Param.StartRecord)
+                .Skip(Param.StartTake)
                 .Take(Param.PageSize)
                 .AsNoTracking()
                 .ToListAsync();
