@@ -8,10 +8,10 @@ namespace API.Services
 {
 
 
-    public class PostsService(AppDbContext dbContext) : IPostsService
+    public class PostsService(AppDbContext DBContext) : IPostsService
     {
 
-        private readonly AppDbContext _dbContext = dbContext;
+        private readonly AppDbContext _dbContext = DBContext;
 
         public async Task<IReadOnlyList<POSTS>> GetListPost(CancellationToken cancellationToken = default)
         {

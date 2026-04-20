@@ -9,11 +9,11 @@ using Microsoft.EntityFrameworkCore;
 namespace API.Services
 {
     public class CustomerService(
-        AppDbContext dbContext
+        AppDbContext DBContext
     ) : ICustomerService
     {
 
-        private readonly AppDbContext _dbContext = dbContext;
+        private readonly AppDbContext _dbContext = DBContext;
 
         public async Task<IReadOnlyList<PostValueModels>> GetCodeCustomer(Principal UserCurrent, CancellationToken cancellationToken = default)
         {

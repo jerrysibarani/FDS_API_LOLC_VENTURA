@@ -16,7 +16,7 @@ namespace API.Services
 {
     public class DocumentService(
         ICoreService coreService,
-        AppDbContext dbContext,
+        AppDbContext DBContext,
         IMapper mapper,
         IOptions<MySettings> options
     ) : IDocumentService
@@ -24,7 +24,7 @@ namespace API.Services
 
         private readonly IMapper _mapper = mapper;
         private readonly ICoreService _coreService = coreService;
-        private readonly AppDbContext _dbContext = dbContext;
+        private readonly AppDbContext _dbContext = DBContext;
         private readonly MySettings _settings = options.Value;
 
         private int batchSize { get; set; }

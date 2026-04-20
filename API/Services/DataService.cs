@@ -12,10 +12,10 @@ using System.Globalization;
 namespace API.Services
 {
     public class DataService(
-        AppDbContext dbContext
+        AppDbContext DBContext
     ) : IDataService
     {
-        private readonly AppDbContext _dbContext = dbContext;
+        private readonly AppDbContext _dbContext = DBContext;
         public async Task<ResponseModel> GetForAHU_Keyset(Principal UserCurrent, ParamData Param, CancellationToken cancellationToken = default)
         {
 

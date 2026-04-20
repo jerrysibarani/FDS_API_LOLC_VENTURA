@@ -10,12 +10,12 @@ using Microsoft.EntityFrameworkCore;
 namespace API.Services
 {
     public class AHUService(
-        AppDbContext dbContext
+        AppDbContext DBContext
     ) : IAHUService
     {
 
 
-        private readonly AppDbContext _dbContext = dbContext;
+        private readonly AppDbContext _dbContext = DBContext;
 
         public async Task<IReadOnlyList<AhuAccountModels>> GetAhuAccounts(Principal UserCurrent, CancellationToken cancellationToken = default)
         {

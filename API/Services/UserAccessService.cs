@@ -13,12 +13,11 @@ namespace API.Services
 {
     public class UserAccessService(
         UserManager<ApplicationUser> userManager,
-        AppDbContext dbContext
+        AppDbContext DBContext
     ) : IUserAccessService
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
-        private readonly AppDbContext _dbContext = dbContext;
-
+        private readonly AppDbContext _dbContext = DBContext;
 
         private async Task<ApplicationUser?> GetCurrentUserAsync(Principal UserCurrent)
         {
@@ -80,7 +79,7 @@ namespace API.Services
 
             return await _dbContext.AccessRoles
                 .Where(ar => ar.ISACTIVE && roles.Contains(ar.ROLE_NAME!))
-                .Join(dbContext.Access.Where(ac => ac.ISACTIVE), ar => ar.ACCESS_ID, ac => ac.ACCESS_ID, (ar, _) => ar)
+                .Join(_dbContext.Access.Where(ac => ac.ISACTIVE), ar => ar.ACCESS_ID, ac => ac.ACCESS_ID, (ar, _) => ar)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
         }
@@ -91,7 +90,7 @@ namespace API.Services
             if (roles.Count == 0) return null;
             return await _dbContext.AccessRoles
                 .Where(ar => ar.ISACTIVE && roles.Contains(ar.ROLE_NAME!))
-                .Join(dbContext.Access.Where(ac => ac.ISACTIVE && ac.ACCESS_CODE == PageName),
+                .Join(_dbContext.Access.Where(ac => ac.ISACTIVE && ac.ACCESS_CODE == PageName),
                       ar => ar.ACCESS_ID, ac => ac.ACCESS_ID, (ar, _) => ar)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(cancellationToken);
@@ -103,7 +102,7 @@ namespace API.Services
             if (roles.Count == 0) return [];
 
             var subMenu = await _dbContext.Access
-                .Join(dbContext.AccessRoles, acc => acc.ACCESS_ID, ar => ar.ACCESS_ID, (acc, ar) => new { acc, ar })
+                .Join(_dbContext.AccessRoles, acc => acc.ACCESS_ID, ar => ar.ACCESS_ID, (acc, ar) => new { acc, ar })
                 .Where(x => x.acc.ISACTIVE && x.ar.ACCESS_VIEW && x.ar.ISACTIVE && roles.Contains(x.ar.ROLE_NAME!))
                 .Select(x => x.acc)
                 .AsNoTracking()
@@ -111,7 +110,7 @@ namespace API.Services
 
             var groupedMainIds = subMenu.Where(x => x.ACCESS_MENU > 0).Select(x => x.ACCESS_MENU).Distinct().ToList();
 
-            var allMain = await dbContext.Access
+            var allMain = await _dbContext.Access
                 .Where(x => groupedMainIds.Contains(x.ACCESS_ID) && (x.ACCESS_MENU == null || x.ACCESS_MENU < 0) && x.ISACTIVE)
                 .OrderBy(x => x.DISPLAY_ORDER)
                 .AsNoTracking()

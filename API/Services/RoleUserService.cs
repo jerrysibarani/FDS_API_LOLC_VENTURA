@@ -10,10 +10,10 @@ namespace API.Services
 {
     public class RoleUserService(
         UserManager<ApplicationUser> _userManager,
-        AppDbContext dbContext
+        AppDbContext DBContext
     ) : IRoleUserService
     {
-        private readonly AppDbContext _dbContext = dbContext;
+        private readonly AppDbContext _dbContext = DBContext;
 
         public async Task<List<RolesUserModel>> GetAllRolesUserAsync(string UserId, CancellationToken cancellationToken)
         {

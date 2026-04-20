@@ -46,13 +46,12 @@ namespace API.Controllers
 
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
-
-                var username_ = prm.Username.IsNullOrEmpty() ? "" : prm.Username!.Trim().ToLower();
+                var username = string.IsNullOrEmpty(prm.Username) ? "" : prm.Username.Trim().ToLower();
                 ApplicationUser? user;
-                if (prm.Username!.Contains("@"))
-                    user = await _userManager.FindByEmailAsync(prm.Username);
+                if (username!.Contains("@"))
+                    user = await _userManager.FindByEmailAsync(username);
                 else
-                    user = await _userManager.FindByNameAsync(prm.Username);
+                    user = await _userManager.FindByNameAsync(username);
 
                 _logger.LogInformation("Find Login by User or Email");
                 if (user == null)

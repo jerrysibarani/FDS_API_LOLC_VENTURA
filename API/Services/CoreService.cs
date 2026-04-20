@@ -1,5 +1,4 @@
-﻿
-using API.Data;
+﻿using API.Data;
 using API.IServices;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -12,12 +11,12 @@ using System.Threading;
 namespace API.Services
 {
     public class CoreService(
-        AppDbContext dbContext
+        AppDbContext DBContext
     ) : ICoreService
     {
 
 
-        private readonly AppDbContext _dbContext = dbContext;
+        private readonly AppDbContext _dbContext = DBContext;
         // Dynamic Join
         public IQueryable<TResult> SelectJoin<T1, T2, TKey, TResult>(
             Expression<Func<T1, TKey>> outerKeySelector,
@@ -256,16 +255,27 @@ namespace API.Services
         {
             NpgsqlParameter[] npgsqlParameters = Array.Empty<NpgsqlParameter>();
 
-            if (parameters != null)
+            string parameterPlaceholders = string.Empty;
+            if (parameters != null && parameters.Count > 0)
             {
                 npgsqlParameters = parameters
                     .Select(p => new NpgsqlParameter(p.Key, p.Value ?? DBNull.Value))
                     .ToArray();
+                parameterPlaceholders = string.Join(", ", npgsqlParameters.Select(p => "@" + p.ParameterName));
+            }
+
+            string sql;
+            if (!string.IsNullOrWhiteSpace(parameterPlaceholders))
+            {
+                sql = $"SELECT * FROM \"{storedProcedure}\"({parameterPlaceholders})";
+            }
+            else
+            {
+                sql = $"SELECT * FROM \"{storedProcedure}\"()";
             }
 
             return await _dbContext.Set<T>()
-                .FromSqlRaw($"SELECT * FROM {storedProcedure}({string.Join(", ", npgsqlParameters.Select(p => "@" + p.ParameterName))})",
-                            npgsqlParameters)
+                .FromSqlRaw(sql, npgsqlParameters)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
         }

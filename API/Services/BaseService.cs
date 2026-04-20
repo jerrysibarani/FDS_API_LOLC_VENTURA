@@ -10,9 +10,9 @@ namespace API.Services
         private readonly AppDbContext _context;
         private readonly DbSet<TEntity> _dbSet;
 
-        public BaseService(AppDbContext context)
+        public BaseService(AppDbContext DBContext)
         {
-            _context = context;
+            _context = DBContext;
             _dbSet = _context.Set<TEntity>();
         }
 

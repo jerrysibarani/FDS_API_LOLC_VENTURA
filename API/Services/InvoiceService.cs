@@ -7,11 +7,11 @@ using Microsoft.EntityFrameworkCore;
 namespace API.Services
 {
     public class InvoiceService(
-        AppDbContext dbContext
+        AppDbContext DBContext
     ) : IInvoiceService
     {
 
-        private readonly AppDbContext _dbContext = dbContext;
+        private readonly AppDbContext _dbContext = DBContext;
 
         public async Task<PriceDataDocument?> GetPriceDocumentCustomer(string ClientCode, string CustomerCode, DateTime StartDate, DateTime EndDate, CancellationToken cancellationToken = default)
         {

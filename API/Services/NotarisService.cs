@@ -10,10 +10,10 @@ using Newtonsoft.Json;
 namespace API.Services
 {
     public class NotarisService(
-        AppDbContext dbContext
+        AppDbContext DBContext
     ) : INotarisService
     {
-        private readonly AppDbContext _dbContext = dbContext;
+        private readonly AppDbContext _dbContext = DBContext;
 
         public async Task<IReadOnlyList<PostValueModels>> GetCodeNotaris(Principal UserCurrent, CancellationToken cancellationToken = default)
         {

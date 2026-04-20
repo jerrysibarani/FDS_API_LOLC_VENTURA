@@ -7,10 +7,10 @@ using Microsoft.EntityFrameworkCore;
 namespace API.Services
 {
     public class HistoryCertificateService(
-        AppDbContext dbContext
+        AppDbContext DBContext
     ) : IHistoryCertificateService
     {
-        private readonly AppDbContext _dbContext = dbContext;
+        private readonly AppDbContext _dbContext = DBContext;
         public async Task<ResponseModel> GetHistoriesCertificateByBatch(int BatchID, Principal UserCurrent, CancellationToken cancellationToken = default)
         {
             var result = await _dbContext.HistoriesCertificates.Where(x => x.BATCH_NUMBER == BatchID).AsNoTracking().ToListAsync(cancellationToken);

@@ -13,8 +13,9 @@ using System.Text;
 using Asp.Versioning;
 using Microsoft.EntityFrameworkCore;
 
-var builder = WebApplication.CreateBuilder(args);
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
+var builder = WebApplication.CreateBuilder(args);
 
 if (builder.Environment.WebRootPath == null)
 {
@@ -37,34 +38,57 @@ builder.Services.AddScoped<IConnectionDB, ConnectionDB>();
 
 builder.Services.AddHealthChecks();
 
-// Check if connection string encryption is enabled.
-var settings = builder.Configuration.GetSection("MySettings").Get<MySettings>();
-string rawConnectionString = builder.Configuration.GetConnectionString("DBConfig")!;
-bool connectionStringEncryption = false;
-if (settings != null && settings.IsEncryption)
-{
-    connectionStringEncryption = true;
-}
+//// Check if connection string encryption is enabled.
+//var settings = builder.Configuration.GetSection("MySettings").Get<MySettings>();
+//string rawConnectionString = builder.Configuration.GetConnectionString("DBConfig")!;
+//bool connectionStringEncryption = false;
+//if (settings != null && settings.IsEncryption)
+//{
+//    connectionStringEncryption = true;
+//}
 
-string decryptedConnectionString;
-if (connectionStringEncryption == false)
+//string decryptedConnectionString;
+//if (connectionStringEncryption == false)
+//{
+//    decryptedConnectionString = rawConnectionString;
+//}
+//else
+//{
+//    using (IServiceScope scope = builder.Services.BuildServiceProvider()!.CreateScope())
+//    {
+//        var decryptor = scope.ServiceProvider.GetRequiredService<IConnectionDB>();
+//        var encryptedConnectionString = rawConnectionString;
+//        decryptedConnectionString = decryptor.DecryptionDB(encryptedConnectionString!);
+//    }
+//}
+//builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(decryptedConnectionString), ServiceLifetime.Scoped);
+
+// Update the existing line to fix the error.
+
+
+builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
 {
-    decryptedConnectionString = rawConnectionString;
-}
-else
-{
-    using (IServiceScope scope = builder.Services.BuildServiceProvider()!.CreateScope())
+    var rawConnectionString = builder.Configuration.GetConnectionString("DBConfig");
+    var settings = builder.Configuration.GetSection("MySettings").Get<MySettings>();
+
+    string connectionString;
+
+    if (settings != null && settings.IsEncryption)
     {
-        var decryptor = scope.ServiceProvider.GetRequiredService<IConnectionDB>();
-        var encryptedConnectionString = rawConnectionString;
-        decryptedConnectionString = decryptor.DecryptionDB(encryptedConnectionString!);
+        // Resolve the decryptor from the provider instead of building a new one
+        var decryptor = serviceProvider.GetRequiredService<IConnectionDB>();
+        connectionString = decryptor.DecryptionDB(rawConnectionString!);
     }
-}
+    else
+    {
+        connectionString = rawConnectionString!;
+    }
+
+    options.UseNpgsql(connectionString);
+}, ServiceLifetime.Scoped);
+
 
 builder.Services.Configure<MySettings>(builder.Configuration.GetSection("MySettings"));
-AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-// Update the existing line to fix the error.
-builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(decryptedConnectionString), ServiceLifetime.Scoped);
 
 // Configure Identity and Authentication
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
@@ -160,7 +184,8 @@ builder.Services.AddSwaggerGen(c =>
                 });
 });
 
-builder.Services.AddAutoMapper(typeof(Program).Assembly);
+//builder.Services.AddAutoMapper(typeof(Program).Assembly);
+builder.Services.AddAutoMapper(cfg => { }, typeof(Program).Assembly);
 
 
 // ✅ 3️⃣ Add Authorization Policy (DI SINI TEMPATNYA)
@@ -187,7 +212,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+if (corsAllow == "true")
+{
+    app.UseCors(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
+}
+else
+{
+    var origins = builder.Configuration.GetSection("AppSettings:DomainName").Value!.ToString().Split(";");
+    app.UseCors(policy => policy.AllowAnyHeader().AllowAnyMethod().WithOrigins(origins));
+}
+app.UseStaticFiles();
+
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

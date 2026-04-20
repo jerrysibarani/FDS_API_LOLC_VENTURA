@@ -12,11 +12,11 @@ using Microsoft.Extensions.Options;
 namespace API.Services
 {
     public class FileService(
-        AppDbContext dbContext,
+        AppDbContext DBContext,
         IOptions<MySettings> options
     ) : IFileService
     {
-        private readonly AppDbContext _dbContext = dbContext;
+        private readonly AppDbContext _dbContext = DBContext;
         private readonly MySettings _settings = options.Value;
         
         public async Task<bool> SaveCertificate(Principal UserCurrent, [FromBody] ParamFile Param, CancellationToken cancellationToken = default)
