@@ -250,7 +250,7 @@ namespace API.Services
                                         from br in bcDefault.DefaultIfEmpty()
 
                                         where !d.DELETED_STATUS && d.AHU_STATUS && d.IMPORT_STATUS  && d.INSERT_DATE.HasValue && p.ISACTIVE
-                                        && d.CERTIFICATE_STATUS
+                                        && !d.CERTIFICATE_STATUS
                                         select new {
                                             Document = d, 
                                             CustomerName = p.CUSTOMER_NAME,
