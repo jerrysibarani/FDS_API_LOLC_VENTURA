@@ -49,5 +49,16 @@ namespace API.Services
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
         }
+
+
+        public async Task<IReadOnlyList<CUSTOMER>> GetAllCustomer(Principal UserCurrent, CancellationToken cancellationToken = default)
+        {
+            var query = _dbContext.Customers.AsNoTracking();
+            if (UserCurrent.UserType == ConstantaData.INTERNAL)
+            {
+                query = query.Where(c => c.CLIENT_CODE == UserCurrent.ClientCode);
+            }
+            return await query.ToListAsync(cancellationToken);
+        }
     }
 }

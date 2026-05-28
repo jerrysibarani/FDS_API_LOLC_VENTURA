@@ -9,5 +9,8 @@ namespace API.IServices
         public Task<IReadOnlyList<PostValueModels>> GetCodeCustomer(Principal UserCurrent, CancellationToken cancellationToken = default);
 
         public Task<IReadOnlyList<CUSTOMER>> GetDataCustomer(Principal UserCurrent, CancellationToken cancellationToken = default);
+        public Task<IReadOnlyList<CUSTOMER>> GetAllCustomer(Principal UserCurrent, CancellationToken cancellationToken = default);
+
+
     }
 }

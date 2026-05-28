@@ -61,5 +61,28 @@ namespace API.Controllers
             }
         }
 
+        [HttpGet("GetAllCustomers")]
+        public async Task<ActionResult> GetAllCustomers(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await _customerService.GetAllCustomer(CurrentUser, cancellationToken);
+
+                if (result == null || !result.Any()) return NotFound("Data not found");
+
+                return Ok(new ResponseModel(
+                            ResponseCode.OK,
+                            "Success",
+                            result.Count(),
+                            result.ToList()
+                        ));
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
     }
 }
