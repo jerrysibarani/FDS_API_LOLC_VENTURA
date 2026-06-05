@@ -1,17 +1,17 @@
-﻿using API.Data;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
+using API.Data;
 using API.Helpers;
 using API.Data.Entities;
 using API.IServices;
 using API.Services;
 using API.Models;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Asp.Versioning;
-using Microsoft.EntityFrameworkCore;
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
@@ -163,25 +163,32 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
-
+    // FIX: Add security requirements using the updated delegate syntax
+    c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecuritySchemeReference("Bearer", document),
+            new List<string>()
+        }
+    });
     // Add a reference to the security scheme to the global operation filter
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
-                {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            },
-                            Scheme = "oauth2",
-                            Name = "Bearer",
-                            In = ParameterLocation.Header,
-                        },
-                        new List<string>()
-                    }
-                });
+    //c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    //            {
+    //                {
+    //                    new OpenApiSecurityScheme
+    //                    {
+    //                        Reference = new OpenApiReference
+    //                        {
+    //                            Type = ReferenceType.SecurityScheme,
+    //                            Id = "Bearer"
+    //                        },
+    //                        Scheme = "oauth2",
+    //                        Name = "Bearer",
+    //                        In = ParameterLocation.Header,
+    //                    },
+    //                    new List<string>()
+    //                }
+    //            });
 });
 
 //builder.Services.AddAutoMapper(typeof(Program).Assembly);
